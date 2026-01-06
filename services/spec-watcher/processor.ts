@@ -7,7 +7,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import { basename, dirname } from "path";
 
 // Parse YAML frontmatter from markdown
@@ -44,24 +44,31 @@ Be concise but thorough. If the plan is solid, say so briefly.
 PLAN:
 ${plan}`;
 
-  // Try GitHub Copilot first
+  // Try GitHub Copilot first (using spawn to avoid shell injection)
   try {
-    const result = execSync(`echo ${JSON.stringify(prompt)} | gh copilot suggest -t shell 2>/dev/null`, {
+    const result = spawnSync("gh", ["copilot", "explain", prompt], {
       encoding: "utf-8",
-      timeout: 60000,
+      timeout: 90000,
+      maxBuffer: 1024 * 1024,
     });
-    if (result.trim()) return result.trim();
+    if (result.status === 0 && result.stdout?.trim()) {
+      return result.stdout.trim();
+    }
   } catch {
     // Copilot not available
   }
 
-  // Try Gemini
+  // Try Gemini CLI (using spawn with stdin to avoid shell injection)
   try {
-    const result = execSync(`echo ${JSON.stringify(prompt)} | gemini -p "Review this plan" 2>/dev/null`, {
+    const result = spawnSync("gemini", ["-p", "Review this implementation plan critically"], {
+      input: prompt,
       encoding: "utf-8",
-      timeout: 60000,
+      timeout: 90000,
+      maxBuffer: 1024 * 1024,
     });
-    if (result.trim()) return result.trim();
+    if (result.status === 0 && result.stdout?.trim()) {
+      return result.stdout.trim();
+    }
   } catch {
     // Gemini not available
   }

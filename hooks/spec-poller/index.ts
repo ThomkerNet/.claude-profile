@@ -39,10 +39,12 @@ interface SpecInfo {
 }
 
 const CLAUDE_HOME = join(homedir(), ".claude");
-const STATE_FILE = join(CLAUDE_HOME, ".spec-poller-state.json");
+const SESSION_ID = process.env.CLAUDE_SESSION_ID || `session-${process.pid}`;
+const STATE_FILE = join(CLAUDE_HOME, `.spec-poller-state-${SESSION_ID}.json`);
 const POLL_INTERVAL_MS = 30 * 1000;  // 30 seconds
 const MAX_POLL_DURATION_MS = 3 * 60 * 60 * 1000;  // 3 hours
-const MAX_POLLS = Math.floor(MAX_POLL_DURATION_MS / POLL_INTERVAL_MS);  // ~120 polls
+const MAX_POLLS = Math.floor(MAX_POLL_DURATION_MS / POLL_INTERVAL_MS);  // ~360 polls
+const MAX_PROCESSED_SPECS = 100;  // Limit to prevent unbounded growth
 
 /**
  * Simple hash for deduplication
@@ -64,9 +66,13 @@ function readState(): PollerState {
   try {
     if (existsSync(STATE_FILE)) {
       const state = JSON.parse(readFileSync(STATE_FILE, "utf-8"));
-      // Reset if poll started more than 2 hours ago (stale state)
-      if (Date.now() - state.pollStartTime > 2 * 60 * 60 * 1000) {
+      // Reset if poll started more than MAX_POLL_DURATION ago (stale state)
+      if (Date.now() - state.pollStartTime > MAX_POLL_DURATION_MS + 60000) {
         return { pollStartTime: Date.now(), processedSpecs: [], pollCount: 0 };
+      }
+      // Trim processedSpecs if too large (keep most recent)
+      if (state.processedSpecs?.length > MAX_PROCESSED_SPECS) {
+        state.processedSpecs = state.processedSpecs.slice(-MAX_PROCESSED_SPECS);
       }
       return state;
     }

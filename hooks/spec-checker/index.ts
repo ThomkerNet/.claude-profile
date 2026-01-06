@@ -11,8 +11,8 @@
  * This is a per-project hook - only checks the current working directory.
  */
 
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync, mkdirSync } from "fs";
-import { join, basename, dirname } from "path";
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
 import { homedir } from "os";
 
 interface HookInput {
