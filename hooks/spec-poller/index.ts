@@ -248,7 +248,7 @@ async function main() {
   // Check if polling is enabled (off by default)
   if (!isPollingEnabled()) {
     // Polling disabled - allow stop without any action
-    console.log(JSON.stringify({ decision: "allow" }));
+    console.log(JSON.stringify({ decision: "approve" }));
     return;
   }
 
@@ -388,15 +388,15 @@ To stop polling and end the session, type: **stop** or press Ctrl+C
     state.pollCount = 0;
     writeState(state);
 
-    // Allow the stop (don't output anything, or output empty decision)
+    // Approve the stop (don't output anything, or output empty decision)
     console.log(JSON.stringify({
-      decision: "allow"
+      decision: "approve"
     }));
 
   } catch (error) {
-    // On error, allow stop
+    // On error, approve stop
     console.log(JSON.stringify({
-      decision: "allow"
+      decision: "approve"
     }));
   }
 }
