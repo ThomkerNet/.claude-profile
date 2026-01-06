@@ -41,10 +41,18 @@ interface SpecInfo {
 const CLAUDE_HOME = join(homedir(), ".claude");
 const SESSION_ID = process.env.CLAUDE_SESSION_ID || `session-${process.pid}`;
 const STATE_FILE = join(CLAUDE_HOME, `.spec-poller-state-${SESSION_ID}.json`);
+const ENABLED_FILE = join(CLAUDE_HOME, ".spec-poller-enabled");
 const POLL_INTERVAL_MS = 30 * 1000;  // 30 seconds
 const MAX_POLL_DURATION_MS = 3 * 60 * 60 * 1000;  // 3 hours
 const MAX_POLLS = Math.floor(MAX_POLL_DURATION_MS / POLL_INTERVAL_MS);  // ~360 polls
 const MAX_PROCESSED_SPECS = 100;  // Limit to prevent unbounded growth
+
+/**
+ * Check if spec polling is enabled
+ */
+function isPollingEnabled(): boolean {
+  return existsSync(ENABLED_FILE);
+}
 
 /**
  * Simple hash for deduplication
@@ -178,6 +186,13 @@ async function main() {
 
   if (!input) {
     process.exit(0);
+  }
+
+  // Check if polling is enabled (off by default)
+  if (!isPollingEnabled()) {
+    // Polling disabled - allow stop without any action
+    console.log(JSON.stringify({ decision: "allow" }));
+    return;
   }
 
   try {

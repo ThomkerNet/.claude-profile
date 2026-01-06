@@ -75,6 +75,36 @@ if [ "$DSC_PLATFORM" = "linux" ]; then
 fi
 
 # ============================================================================
+# Homebrew Permissions Fix (macOS only)
+# ============================================================================
+
+if [ "$DSC_PLATFORM" = "mac" ] && [ -d "/opt/homebrew" ]; then
+    # Check if Homebrew directories are writable
+    if [ ! -w "/opt/homebrew/Cellar" ] || [ ! -w "/opt/homebrew/bin" ]; then
+        echo ""
+        echo "── Homebrew Permissions Fix ──"
+        echo "  Homebrew directories have incorrect permissions."
+
+        if command -v sudo &>/dev/null && sudo -v 2>/dev/null; then
+            # Fix ownership for current user
+            if sudo chown -R "$(whoami)" /opt/homebrew 2>/dev/null; then
+                dsc_changed "fix:homebrew-permissions (fixed for $(whoami))"
+            else
+                dsc_failed "fix:homebrew-permissions"
+            fi
+
+            # Also fix for admin group to allow other admin users
+            if sudo chgrp -R admin /opt/homebrew 2>/dev/null && sudo chmod -R g+w /opt/homebrew 2>/dev/null; then
+                dsc_changed "fix:homebrew-admin-group (admin group has write access)"
+            fi
+        else
+            dsc_failed "fix:homebrew-permissions (sudo required)"
+            echo "  Run manually: sudo chown -R $(whoami) /opt/homebrew"
+        fi
+    fi
+fi
+
+# ============================================================================
 # Step 1: System Packages
 # ============================================================================
 
