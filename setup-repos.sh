@@ -140,30 +140,30 @@ clone_or_update_repo() {
         # Repo exists - pull updates
         if $DRY_RUN; then
             log_skip "$github_org/$repo_name (exists, would update)"
-            ((SKIPPED++))
+            SKIPPED=$((SKIPPED + 1))
         else
             log_info "Updating $github_org/$repo_name..."
             if (cd "$repo_path" && git pull --ff-only 2>/dev/null); then
                 log_success "$repo_name updated"
-                ((UPDATED++))
+                UPDATED=$((UPDATED + 1))
             else
                 log_warn "$repo_name has local changes, skipping update"
-                ((SKIPPED++))
+                SKIPPED=$((SKIPPED + 1))
             fi
         fi
     else
         # Clone new repo
         if $DRY_RUN; then
             log_info "[DRY-RUN] Would clone: $github_org/$repo_name -> $repo_path"
-            ((CLONED++))
+            CLONED=$((CLONED + 1))
         else
             log_info "Cloning $github_org/$repo_name..."
             if gh repo clone "$github_org/$repo_name" "$repo_path" -- --depth 1 2>/dev/null; then
                 log_success "$repo_name cloned"
-                ((CLONED++))
+                CLONED=$((CLONED + 1))
             else
                 log_error "Failed to clone $repo_name"
-                ((FAILED++))
+                FAILED=$((FAILED + 1))
             fi
         fi
     fi
