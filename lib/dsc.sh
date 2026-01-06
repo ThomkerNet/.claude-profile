@@ -105,7 +105,8 @@ ensure_package() {
     fi
 
     dsc_failed "package:$name (install failed)"
-    return 1
+    # Return 0 to continue script execution (failure is logged)
+    return 0
 }
 
 # ============================================================================
@@ -128,7 +129,7 @@ ensure_npm_package() {
     # Set: Install via npm
     if ! command -v npm &>/dev/null; then
         dsc_failed "npm:$pkg (npm not available)"
-        return 1
+        return 0  # Continue script execution
     fi
 
     echo -e "  ${_BLUE}Installing $pkg...${_NC}"
@@ -140,7 +141,7 @@ ensure_npm_package() {
     fi
 
     dsc_failed "npm:$pkg (install failed)"
-    return 1
+    return 0  # Continue script execution
 }
 
 # ============================================================================
@@ -165,7 +166,7 @@ ensure_pip_package() {
     elif command -v pip &>/dev/null; then pip_cmd="pip"
     else
         dsc_failed "pip:$pkg (pip not available)"
-        return 1
+        return 0  # Continue script execution
     fi
 
     echo -e "  ${_BLUE}Installing $pkg...${_NC}"
@@ -181,7 +182,7 @@ ensure_pip_package() {
     fi
 
     dsc_failed "pip:$pkg (install failed)"
-    return 1
+    return 0  # Continue script execution
 }
 
 # ============================================================================

@@ -54,28 +54,53 @@ if [ ! -f "$CLAUDE_HOME/.credentials.json" ]; then
 fi
 
 # ============================================================================
-# Admin Access (Linux only)
+# Admin Access Check (upfront for both platforms)
 # ============================================================================
 
+HAVE_SUDO=false
+needs_sudo=false
+
+# Detect if we'll need sudo for any operations
 if [ "$DSC_PLATFORM" = "linux" ]; then
-    needs_sudo=false
     [ ! -x "$(command -v jq)" ] && needs_sudo=true
     [ ! -x "$(command -v tmux)" ] && needs_sudo=true
-
-    if [ "$needs_sudo" = true ]; then
-        echo "Some packages require administrator access."
-        if command -v sudo &>/dev/null && sudo -v 2>/dev/null; then
-            dsc_changed "admin:sudo (credentials cached)"
-            # Keep sudo alive
-            (while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done) &
-        else
-            dsc_skipped "admin:sudo (not available, some installs may fail)"
-        fi
+elif [ "$DSC_PLATFORM" = "mac" ]; then
+    # Check if Homebrew needs permission fixes
+    if [ -d "/opt/homebrew" ]; then
+        [ ! -w "/opt/homebrew/Cellar" ] && needs_sudo=true
+        [ ! -w "/opt/homebrew/bin" ] && needs_sudo=true
     fi
 fi
 
+# Prompt for admin credentials upfront if needed
+if [ "$needs_sudo" = true ]; then
+    echo "── Admin Access Required ──"
+    echo "  Some operations require administrator privileges."
+    echo ""
+
+    if ! command -v sudo &>/dev/null; then
+        echo "  ⚠️  sudo is not available on this system."
+        echo "  Some installations may fail. Continuing anyway..."
+        dsc_skipped "admin:sudo (not available)"
+    else
+        echo "  Please enter your password to continue (or Ctrl+C to skip):"
+        # Use || true to prevent set -e from exiting on sudo failure
+        if sudo -v 2>/dev/null; then
+            HAVE_SUDO=true
+            dsc_changed "admin:sudo (credentials cached)"
+            # Keep sudo alive in background
+            (while true; do sudo -n true 2>/dev/null; sleep 50; kill -0 "$$" 2>/dev/null || exit; done) &
+        else
+            echo "  ⚠️  Could not obtain admin privileges."
+            echo "  Some installations may fail. Continuing anyway..."
+            dsc_skipped "admin:sudo (auth failed)"
+        fi
+    fi
+    echo ""
+fi
+
 # ============================================================================
-# Homebrew Permissions Fix (macOS only)
+# Homebrew Permissions Fix (macOS only, requires sudo)
 # ============================================================================
 
 if [ "$DSC_PLATFORM" = "mac" ] && [ -d "/opt/homebrew" ]; then
@@ -83,9 +108,8 @@ if [ "$DSC_PLATFORM" = "mac" ] && [ -d "/opt/homebrew" ]; then
     if [ ! -w "/opt/homebrew/Cellar" ] || [ ! -w "/opt/homebrew/bin" ]; then
         echo ""
         echo "── Homebrew Permissions Fix ──"
-        echo "  Homebrew directories have incorrect permissions."
 
-        if command -v sudo &>/dev/null && sudo -v 2>/dev/null; then
+        if [ "$HAVE_SUDO" = true ]; then
             # Fix ownership for current user
             if sudo chown -R "$(whoami)" /opt/homebrew 2>/dev/null; then
                 dsc_changed "fix:homebrew-permissions (fixed for $(whoami))"
@@ -98,8 +122,8 @@ if [ "$DSC_PLATFORM" = "mac" ] && [ -d "/opt/homebrew" ]; then
                 dsc_changed "fix:homebrew-admin-group (admin group has write access)"
             fi
         else
-            dsc_failed "fix:homebrew-permissions (sudo required)"
-            echo "  Run manually: sudo chown -R $(whoami) /opt/homebrew"
+            dsc_skipped "fix:homebrew-permissions (no sudo)"
+            echo "  To fix manually: sudo chown -R $(whoami) /opt/homebrew"
         fi
     fi
 fi
