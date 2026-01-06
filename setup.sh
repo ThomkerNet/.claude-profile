@@ -215,10 +215,7 @@ fi
 echo ""
 echo "── Step 3: CLI Tools ──"
 
-# Gemini CLI
-ensure_npm_package "@google/gemini-cli" "gemini"
-
-# GitHub Copilot CLI
+# GitHub Copilot CLI (used for AI peer reviews)
 if command -v gh &>/dev/null && gh extension list 2>/dev/null | grep -q copilot; then
     dsc_unchanged "npm:gh-copilot (installed as gh extension)"
 else
@@ -368,23 +365,19 @@ echo "── Step 8: Background Services ──"
 if [ "$DSC_PLATFORM" = "mac" ]; then
     ensure_directory "$HOME/Library/LaunchAgents"
 
-    # Glances monitoring service
+    # Glances monitoring service (plist only - manual load recommended)
     if [ -f "$REPO_DIR/services/com.claude.glances.plist" ]; then
         GLANCES_PLIST="$HOME/Library/LaunchAgents/com.claude.glances.plist"
         ensure_file_template "$REPO_DIR/services/com.claude.glances.plist" "$GLANCES_PLIST" \
             "{{HOME}}=$HOME" \
             "{{CLAUDE_HOME}}=$CLAUDE_HOME"
 
-        # Load service if not running
-        if ! launchctl list 2>/dev/null | grep -q "com.claude.glances"; then
-            # Use subshell to isolate launchctl signal handling
-            if (launchctl load "$GLANCES_PLIST" 2>/dev/null); then
-                dsc_changed "service:com.claude.glances (started)"
-            else
-                dsc_failed "service:com.claude.glances (load failed)"
-            fi
-        else
+        # Check if service is running (don't try to load - launchctl has issues in some contexts)
+        if launchctl list 2>/dev/null | grep -q "com.claude.glances"; then
             dsc_unchanged "service:com.claude.glances (running)"
+        else
+            dsc_info "service:com.claude.glances plist installed. Load manually: launchctl load $GLANCES_PLIST"
+            dsc_unchanged "service:com.claude.glances (plist ready)"
         fi
     fi
 
@@ -511,8 +504,8 @@ echo ""
 echo "── Step 11: MCP Servers ──"
 
 if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && command -v jq &>/dev/null; then
-    # Get list of currently installed MCP servers
-    INSTALLED_SERVERS=$(claude mcp list -s user 2>/dev/null | grep -E "^\s+\w" | awk '{print $1}' || echo "")
+    # Get list of currently installed MCP servers (parse name from "name: command" format)
+    INSTALLED_SERVERS=$(claude mcp list 2>/dev/null | grep -E "^[a-z].*:" | cut -d: -f1 || echo "")
 
     jq -c '.servers[]' "$REPO_DIR/mcp-servers.json" 2>/dev/null | while IFS= read -r row; do
         name=$(echo "$row" | jq -r '.name')
@@ -539,8 +532,8 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
             done < <(echo "$row" | jq -r '.env | to_entries[] | "\(.key)=\(.value)"')
         fi
 
-        # Install MCP server
-        if eval "claude mcp add \"$name\" --transport stdio -s user $env_args -- $cmd" &>/dev/null; then
+        # Install MCP server (--scope user for user-level config)
+        if eval "claude mcp add \"$name\" --transport stdio --scope user $env_args -- $cmd" &>/dev/null; then
             dsc_changed "mcp:$name (added)"
         else
             dsc_failed "mcp:$name"
@@ -600,8 +593,6 @@ esac
 
 echo "  1. Reload shell: $RELOAD_CMD"
 echo "  2. Run 'claude' to start Claude Code"
-
-command -v gemini &>/dev/null && echo "  3. Run 'gemini' to login (first time)"
-command -v bw &>/dev/null && echo "  4. Run 'bw login' for Vaultwarden access"
+command -v bw &>/dev/null && echo "  3. Run 'bw login' for Vaultwarden access"
 
 echo ""
