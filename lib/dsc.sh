@@ -28,10 +28,10 @@ _YELLOW='\033[1;33m'
 _BLUE='\033[0;34m'
 _NC='\033[0m'
 
-# Logging functions
-dsc_changed()   { echo -e "${_GREEN}[changed]${_NC} $1"; ((DSC_CHANGES++)); }
-dsc_unchanged() { echo -e "${_BLUE}[ok]${_NC} $1"; ((DSC_UNCHANGED++)); }
-dsc_failed()    { echo -e "${_RED}[failed]${_NC} $1"; ((DSC_FAILED++)); DSC_FAILURES+=("$1"); }
+# Logging functions (use || true to prevent set -e exit when incrementing from 0)
+dsc_changed()   { echo -e "${_GREEN}[changed]${_NC} $1"; ((DSC_CHANGES++)) || true; }
+dsc_unchanged() { echo -e "${_BLUE}[ok]${_NC} $1"; ((DSC_UNCHANGED++)) || true; }
+dsc_failed()    { echo -e "${_RED}[failed]${_NC} $1"; ((DSC_FAILED++)) || true; DSC_FAILURES+=("$1"); }
 dsc_skipped()   { echo -e "${_YELLOW}[skipped]${_NC} $1"; }
 dsc_info()      { [ "$DSC_VERBOSE" = true ] && echo -e "${_BLUE}[info]${_NC} $1"; }
 
