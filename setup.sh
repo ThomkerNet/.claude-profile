@@ -65,7 +65,7 @@ CURRENT_USER="$(whoami)"
 if [ "$DSC_PLATFORM" = "mac" ]; then
     # ── macOS: Homebrew Single-Owner Model ──
     # Homebrew is owned by one user (e.g., macmini-admin)
-    # Other users run brew commands via su
+    # Other users run brew commands via su + expect (macOS su needs TTY)
 
     if [ -d "/opt/homebrew" ]; then
         BREW_OWNER=$(stat -f '%Su' /opt/homebrew 2>/dev/null || echo "")
@@ -84,13 +84,25 @@ if [ "$DSC_PLATFORM" = "mac" ]; then
             echo ""
 
             if [ -n "$BREW_PASS" ]; then
-                # Test authentication
-                if echo "$BREW_PASS" | su - "$BREW_OWNER" -c "echo 'ok'" 2>/dev/null | grep -q "ok"; then
+                # Test authentication using expect (macOS su requires TTY)
+                auth_result=$(expect -c "
+                    log_user 0
+                    spawn su - $BREW_OWNER -c \"echo AUTH_OK\"
+                    expect \"Password:\"
+                    send \"$BREW_PASS\r\"
+                    expect eof
+                    catch wait result
+                    exit [lindex \$result 3]
+                " 2>&1)
+
+                if echo "$auth_result" | grep -q "AUTH_OK"; then
                     BREW_ADMIN="$BREW_OWNER"
+                    export BREW_PASS  # Export for dsc_run_brew to use
                     dsc_changed "homebrew:access (via $BREW_OWNER)"
                 else
                     echo "  ⚠️  Authentication failed"
                     dsc_skipped "homebrew:access (auth failed)"
+                    unset BREW_PASS
                 fi
             else
                 dsc_skipped "homebrew:access (skipped)"
