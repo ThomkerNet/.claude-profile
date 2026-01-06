@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Claude Code Glances Stats Collector every minute
+Documentation=https://github.com/ample-engineer/.claude
+
+[Timer]
+OnBootSec=30
+OnUnitActiveSec=60
+AccuracySec=10s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

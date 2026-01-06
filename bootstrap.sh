@@ -27,6 +27,72 @@ log_warn() { echo -e "${YELLOW}⚠${NC} $1"; }
 log_error() { echo -e "${RED}✗${NC} $1"; }
 log_step() { echo -e "${MAGENTA}▶${NC} $1"; }
 
+# Check if sudo access is available and cache credentials
+SUDO_AVAILABLE=false
+check_sudo_access() {
+    # On macOS, Homebrew doesn't need sudo
+    if [ "$PLATFORM" = "mac" ]; then
+        return 0
+    fi
+
+    # Check if we can run sudo
+    if command -v sudo &> /dev/null; then
+        if sudo -n true 2>/dev/null; then
+            # Already have cached credentials
+            SUDO_AVAILABLE=true
+            return 0
+        elif sudo -v 2>/dev/null; then
+            # Successfully prompted for password
+            SUDO_AVAILABLE=true
+            return 0
+        fi
+    fi
+    return 1
+}
+
+# Prompt for admin credentials upfront if needed on Linux
+prompt_admin_if_needed() {
+    if [ "$PLATFORM" != "linux" ]; then
+        return 0
+    fi
+
+    # Determine what needs admin
+    local needs_admin=false
+    local reasons=()
+
+    # Check if we need to install system packages
+    if ! command -v git &> /dev/null || ! command -v node &> /dev/null; then
+        needs_admin=true
+        reasons+=("Installing system packages (git, nodejs)")
+    fi
+
+    if ! command -v jq &> /dev/null || ! command -v tmux &> /dev/null; then
+        needs_admin=true
+        reasons+=("Installing optional tools (jq, tmux)")
+    fi
+
+    if [ "$needs_admin" = true ]; then
+        echo ""
+        log_warn "This installation requires administrator access for:"
+        for reason in "${reasons[@]}"; do
+            echo -e "  ${BLUE}•${NC} $reason"
+        done
+        echo ""
+        log_info "Please enter your password to continue (credentials will be cached)"
+        echo ""
+
+        if check_sudo_access; then
+            log_success "Administrator access granted"
+            # Keep sudo alive in background
+            (while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done) &
+            SUDO_KEEPALIVE_PID=$!
+        else
+            log_warn "Could not obtain administrator access"
+            log_info "Some features may not be installed. Continuing anyway..."
+        fi
+    fi
+}
+
 # Determine repo and target directories
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
@@ -73,6 +139,9 @@ case "$OS" in
         ;;
 esac
 log_info "Platform: $PLATFORM ($PKG_MANAGER)"
+
+# Check for admin access upfront (Linux only)
+prompt_admin_if_needed
 
 # Helper function to install packages
 install_pkg() {
@@ -187,7 +256,19 @@ if command -v claude &> /dev/null; then
     log_success "Claude Code CLI installed: $(claude --version 2>/dev/null || echo 'version unknown')"
 else
     log_step "Installing Claude Code CLI..."
-    if npm install -g @anthropic-ai/claude-code 2>&1; then
+    log_info "  This may take a few minutes. Please wait..."
+    echo ""
+
+    # Run npm install with visible progress
+    if npm install -g @anthropic-ai/claude-code 2>&1 | while IFS= read -r line; do
+        # Show key progress lines
+        case "$line" in
+            *"added"*|*"packages"*|*"npm"*"warn"*|*"npm"*"notice"*)
+                echo "  $line"
+                ;;
+        esac
+    done; then
+        echo ""
         if command -v claude &> /dev/null; then
             log_success "Claude Code CLI installed"
         else
@@ -195,6 +276,7 @@ else
             log_info "  Restart terminal or run: export PATH=\"\$HOME/.npm-global/bin:\$PATH\""
         fi
     else
+        echo ""
         log_error "Claude Code CLI installation failed"
         exit 1
     fi

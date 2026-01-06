@@ -1,0 +1,16 @@
+[Unit]
+Description=Claude Code Glances Stats Collector
+Documentation=https://github.com/ample-engineer/.claude
+After=network.target
+
+[Service]
+Type=oneshot
+Environment="CLAUDE_HOME={{CLAUDE_HOME}}"
+Environment="HOME={{HOME}}"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:%h/.local/bin"
+ExecStart=/bin/bash {{CLAUDE_HOME}}/services/glances-collector.sh
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

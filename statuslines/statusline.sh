@@ -3,6 +3,111 @@
 # Reads JSON input from stdin and outputs single-line formatted status
 # Note: Only the first line of output is displayed as the status line
 
+# Get hostname (short form)
+HOSTNAME_SHORT=$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo "unknown")
+
+# Detect platform
+OS_TYPE="$(uname -s)"
+
+# Read system stats from glances collector cache (15-min averages)
+# Falls back to instant readings if cache unavailable
+GLANCES_CACHE="${HOME}/.claude/.glances-stats.json"
+
+get_system_stats() {
+    local cpu_pct mem_pct
+
+    # Try reading from glances cache first (has 15-min averages)
+    if [ -f "$GLANCES_CACHE" ]; then
+        local cache_age
+        local cache_time
+        cache_time=$(jq -r '.timestamp // 0' "$GLANCES_CACHE" 2>/dev/null)
+        cache_age=$(( $(date +%s) - cache_time ))
+
+        # Use cache if less than 2 minutes old
+        if [ "$cache_age" -lt 120 ]; then
+            cpu_pct=$(jq -r '.cpu.avg_15m // .cpu.current // 0' "$GLANCES_CACHE" 2>/dev/null)
+            mem_pct=$(jq -r '.mem.avg_15m // .mem.current // 0' "$GLANCES_CACHE" 2>/dev/null)
+            if [ -n "$cpu_pct" ] && [ "$cpu_pct" != "null" ] && [ -n "$mem_pct" ] && [ "$mem_pct" != "null" ]; then
+                echo "${cpu_pct}:${mem_pct}"
+                return
+            fi
+        fi
+    fi
+
+    # Fallback: instant readings
+    case "$OS_TYPE" in
+        Darwin)
+            cpu_idle=$(top -l 1 -n 0 2>/dev/null | grep "CPU usage" | awk '{print $7}' | tr -d '%')
+            if [ -n "$cpu_idle" ]; then
+                cpu_pct=$((100 - ${cpu_idle%.*}))
+            else
+                cpu_pct="--"
+            fi
+
+            pages_free=$(vm_stat 2>/dev/null | awk '/Pages free/ {print $3}' | tr -d '.')
+            pages_active=$(vm_stat 2>/dev/null | awk '/Pages active/ {print $3}' | tr -d '.')
+            pages_inactive=$(vm_stat 2>/dev/null | awk '/Pages inactive/ {print $3}' | tr -d '.')
+            pages_wired=$(vm_stat 2>/dev/null | awk '/Pages wired/ {print $4}' | tr -d '.')
+            pages_compressed=$(vm_stat 2>/dev/null | awk '/Pages occupied by compressor/ {print $5}' | tr -d '.')
+
+            if [ -n "$pages_free" ] && [ -n "$pages_active" ]; then
+                pages_free=${pages_free:-0}
+                pages_active=${pages_active:-0}
+                pages_inactive=${pages_inactive:-0}
+                pages_wired=${pages_wired:-0}
+                pages_compressed=${pages_compressed:-0}
+                total_pages=$((pages_free + pages_active + pages_inactive + pages_wired + pages_compressed))
+                used_pages=$((pages_active + pages_wired + pages_compressed))
+                if [ "$total_pages" -gt 0 ]; then
+                    mem_pct=$((used_pages * 100 / total_pages))
+                else
+                    mem_pct="--"
+                fi
+            else
+                mem_pct="--"
+            fi
+            ;;
+        Linux)
+            cpu_line=$(head -1 /proc/stat 2>/dev/null)
+            if [ -n "$cpu_line" ]; then
+                cpu_vals=($cpu_line)
+                idle=${cpu_vals[4]}
+                total=0
+                for val in "${cpu_vals[@]:1}"; do
+                    total=$((total + val))
+                done
+                if [ "$total" -gt 0 ]; then
+                    cpu_pct=$(( (total - idle) * 100 / total ))
+                else
+                    cpu_pct="--"
+                fi
+            else
+                cpu_pct="--"
+            fi
+
+            mem_total=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}')
+            mem_available=$(grep MemAvailable /proc/meminfo 2>/dev/null | awk '{print $2}')
+            if [ -n "$mem_total" ] && [ -n "$mem_available" ] && [ "$mem_total" -gt 0 ]; then
+                mem_used=$((mem_total - mem_available))
+                mem_pct=$((mem_used * 100 / mem_total))
+            else
+                mem_pct="--"
+            fi
+            ;;
+        *)
+            cpu_pct="--"
+            mem_pct="--"
+            ;;
+    esac
+
+    echo "${cpu_pct}:${mem_pct}"
+}
+
+# Get system stats
+SYSTEM_STATS=$(get_system_stats)
+CPU_PCT=$(echo "$SYSTEM_STATS" | cut -d: -f1)
+MEM_PCT=$(echo "$SYSTEM_STATS" | cut -d: -f2)
+
 # Read JSON from stdin
 input=$(cat)
 data=$(echo "$input" | jq -r '.' 2>/dev/null)
@@ -95,15 +200,35 @@ if [ -f "$quotaFile" ]; then
     fi
 fi
 
+# Format system stats string
+sysStatsStr=""
+if [ "$CPU_PCT" != "--" ] || [ "$MEM_PCT" != "--" ]; then
+    sysStatsStr=" | C:${CPU_PCT}% M:${MEM_PCT}%"
+fi
+
+# Check for pending specs in current project
+specStr=""
+specDir="$fullPath/.claude-specs"
+if [ -d "$specDir" ]; then
+    specCount=$(find "$specDir" -maxdepth 1 -name "*-SPEC.md" -o -name "*-SPEC.MD" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$specCount" -gt 0 ]; then
+        specStr=" | SPEC:$specCount"
+    fi
+fi
+
 # Output single-line formatted status
-printf "%-8s %s%s%s | %s (%s%%)%s | +%s -%s%s\n" \
+# Format: [model] host:path [branch] | tokens (ctx%) quota | sys | specs | +lines -lines cost
+printf "%-8s %s:%s%s%s | %s (%s%%)%s%s%s | +%s -%s%s\n" \
     "[$model]" \
+    "$HOSTNAME_SHORT" \
     "$currentDir" \
     "$gitBranch" \
     "$customLabel" \
     "$(format_tokens $totalTokens)" \
     "$contextPct" \
     "$quotaStr" \
+    "$sysStatsStr" \
+    "$specStr" \
     "$(echo "$data" | jq -r '.cost.total_lines_added // 0')" \
     "$(echo "$data" | jq -r '.cost.total_lines_removed // 0')" \
     "$costStr"

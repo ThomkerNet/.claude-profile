@@ -1,0 +1,16 @@
+[Unit]
+Description=Claude Spec Watcher - Scan for new spec files
+Documentation=https://github.com/ample-engineer/.claude
+After=network.target
+
+[Service]
+Type=oneshot
+Environment="CLAUDE_HOME={{CLAUDE_HOME}}"
+Environment="HOME={{HOME}}"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:%h/.bun/bin:%h/.npm-global/bin:%h/.local/bin"
+ExecStart=/bin/bash {{CLAUDE_HOME}}/services/spec-watcher/watcher.sh scan
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target
