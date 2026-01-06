@@ -100,22 +100,33 @@ dsc_run_privileged() {
 # dsc_run_brew <args...>
 # Runs brew command - via BREW_ADMIN user if set, otherwise directly
 # Set BREW_ADMIN and BREW_PASS in setup.sh when current user doesn't own Homebrew
-# Uses expect on macOS because su requires a TTY for password input
+# Uses expect heredoc (hides password from ps) with timeout for robustness
 dsc_run_brew() {
     local args="$*"
 
     if [ -n "${BREW_ADMIN:-}" ] && [ -n "${BREW_PASS:-}" ]; then
-        # Run as Homebrew owner via su + expect (macOS needs TTY)
-        expect -c "
+        # Run as Homebrew owner via su + expect heredoc (hides password from ps)
+        export BREW_ARGS="$args"
+        expect <<'EXPECT_BREW' 2>/dev/null
+            set timeout 300
             log_user 0
-            spawn su - $BREW_ADMIN -c \"brew $args\"
-            expect \"Password:\"
-            send \"$BREW_PASS\r\"
-            log_user 1
-            expect eof
-            catch wait result
-            exit [lindex \$result 3]
-        " 2>/dev/null
+            spawn su - $env(BREW_ADMIN) -c "brew $env(BREW_ARGS)"
+            expect {
+                "Password:" {
+                    send "$env(BREW_PASS)\r"
+                    log_user 1
+                    expect {
+                        eof {
+                            catch wait result
+                            exit [lindex $result 3]
+                        }
+                        timeout { exit 124 }
+                    }
+                }
+                timeout { exit 124 }
+                eof { exit 1 }
+            }
+EXPECT_BREW
         return $?
     elif [ -n "${BREW_ADMIN:-}" ]; then
         # BREW_ADMIN set but no password - try without (will likely fail)

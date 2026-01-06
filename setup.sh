@@ -90,24 +90,38 @@ if [ "$DSC_PLATFORM" = "mac" ]; then
             fi
 
             if [ -n "$BREW_PASS" ]; then
-                # Test authentication using expect (macOS su requires TTY)
-                # Note: log_user must be 1 to capture AUTH_OK output
-                auth_result=$(expect -c "
+                # Test authentication using expect heredoc (hides password from ps)
+                # Uses timeout and exit code validation for robustness
+                export BREW_OWNER BREW_PASS
+                auth_result=$(expect <<'EXPECT_SCRIPT' 2>&1
+                    set timeout 30
                     log_user 1
-                    spawn su - $BREW_OWNER -c \"echo AUTH_OK\"
-                    expect \"Password:\"
-                    log_user 0
-                    send \"$BREW_PASS\r\"
-                    log_user 1
-                    expect eof
-                " 2>&1)
+                    spawn su - $env(BREW_OWNER) -c "echo AUTH_OK"
+                    expect {
+                        "Password:" {
+                            log_user 0
+                            send "$env(BREW_PASS)\r"
+                            log_user 1
+                            expect {
+                                "AUTH_OK" { exit 0 }
+                                "Sorry" { exit 1 }
+                                timeout { exit 2 }
+                                eof { exit 1 }
+                            }
+                        }
+                        timeout { exit 2 }
+                        eof { exit 1 }
+                    }
+EXPECT_SCRIPT
+                )
+                auth_exit=$?
 
-                if echo "$auth_result" | grep -q "AUTH_OK"; then
+                if [ $auth_exit -eq 0 ] && echo "$auth_result" | grep -q "AUTH_OK"; then
                     BREW_ADMIN="$BREW_OWNER"
-                    export BREW_PASS  # Export for dsc_run_brew to use
+                    # BREW_PASS already exported for dsc_run_brew
                     dsc_changed "homebrew:access (via $BREW_OWNER)"
                 else
-                    echo "  ⚠️  Authentication failed"
+                    echo "  ⚠️  Authentication failed (exit code: $auth_exit)"
                     dsc_skipped "homebrew:access (auth failed)"
                     unset BREW_PASS
                 fi
