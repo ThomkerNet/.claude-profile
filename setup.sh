@@ -54,113 +54,86 @@ if [ ! -f "$CLAUDE_HOME/.credentials.json" ]; then
 fi
 
 # ============================================================================
-# Admin Access Check (upfront for both platforms)
+# Credential Setup (platform-specific)
 # ============================================================================
 
 HAVE_ADMIN=false
 ADMIN_USER=""
+BREW_ADMIN=""
 CURRENT_USER="$(whoami)"
-needs_admin=false
 
-# Detect if we'll need admin for any operations
-if [ "$DSC_PLATFORM" = "linux" ]; then
+if [ "$DSC_PLATFORM" = "mac" ]; then
+    # ── macOS: Homebrew Single-Owner Model ──
+    # Homebrew is owned by one user (e.g., macmini-admin)
+    # Other users run brew commands via su
+
+    if [ -d "/opt/homebrew" ]; then
+        BREW_OWNER=$(stat -f '%Su' /opt/homebrew 2>/dev/null || echo "")
+
+        if [ "$BREW_OWNER" = "$CURRENT_USER" ]; then
+            # Current user owns Homebrew - direct access
+            dsc_unchanged "homebrew:owner ($CURRENT_USER)"
+        elif [ -n "$BREW_OWNER" ]; then
+            # Different owner - need to authenticate as that user
+            echo ""
+            echo "── Homebrew Access ──"
+            echo "  Homebrew is owned by: $BREW_OWNER"
+            echo "  You ($CURRENT_USER) will need their credentials for brew commands."
+            echo ""
+            read -p "  Enter password for $BREW_OWNER (or press Enter to skip brew installs): " -s BREW_PASS
+            echo ""
+
+            if [ -n "$BREW_PASS" ]; then
+                # Test authentication
+                if echo "$BREW_PASS" | su - "$BREW_OWNER" -c "echo 'ok'" 2>/dev/null | grep -q "ok"; then
+                    BREW_ADMIN="$BREW_OWNER"
+                    dsc_changed "homebrew:access (via $BREW_OWNER)"
+                else
+                    echo "  ⚠️  Authentication failed"
+                    dsc_skipped "homebrew:access (auth failed)"
+                fi
+            else
+                dsc_skipped "homebrew:access (skipped)"
+            fi
+            echo ""
+        fi
+    fi
+
+elif [ "$DSC_PLATFORM" = "linux" ]; then
+    # ── Linux: sudo/su for package managers ──
+    needs_admin=false
     [ ! -x "$(command -v jq)" ] && needs_admin=true
     [ ! -x "$(command -v tmux)" ] && needs_admin=true
-elif [ "$DSC_PLATFORM" = "mac" ]; then
-    # Check if Homebrew needs permission fixes
-    if [ -d "/opt/homebrew" ]; then
-        [ ! -w "/opt/homebrew/Cellar" ] && needs_admin=true
-        [ ! -w "/opt/homebrew/bin" ] && needs_admin=true
-    fi
-fi
 
-# Helper function to run commands as admin
-run_as_admin() {
-    local cmd="$1"
-    if [ "$HAVE_ADMIN" = true ]; then
-        if [ -n "$ADMIN_USER" ]; then
-            # Use su to run as admin user
-            su - "$ADMIN_USER" -c "$cmd" 2>/dev/null
-        else
-            # Current user has sudo access
-            sudo sh -c "$cmd" 2>/dev/null
-        fi
-    else
-        return 1
-    fi
-}
+    if [ "$needs_admin" = true ]; then
+        echo ""
+        echo "── Admin Access Required ──"
+        echo "  Some packages need to be installed."
+        echo ""
 
-# Prompt for admin credentials upfront if needed
-if [ "$needs_admin" = true ]; then
-    echo "── Admin Access Required ──"
-    echo "  Some operations require administrator privileges."
-    echo ""
-
-    # First, check if current user already has sudo access (cached or passwordless)
-    if sudo -n true 2>/dev/null; then
-        HAVE_ADMIN=true
-        dsc_unchanged "admin:sudo (already authenticated)"
-    else
-        # Try sudo with password prompt
-        echo "  Trying sudo first (enter YOUR password if prompted):"
-        if sudo -v 2>/dev/null; then
+        if sudo -n true 2>/dev/null; then
+            HAVE_ADMIN=true
+            dsc_unchanged "admin:sudo (already authenticated)"
+        elif sudo -v 2>/dev/null; then
             HAVE_ADMIN=true
             dsc_changed "admin:sudo (credentials cached)"
-            # Keep sudo alive in background
             (while true; do sudo -n true 2>/dev/null; sleep 50; kill -0 "$$" 2>/dev/null || exit; done) &
         else
-            # sudo failed - offer su as alternative
-            echo ""
-            echo "  sudo not available for this user."
-            echo "  You can authenticate as an admin user instead."
-            echo ""
-            read -p "  Enter admin username (or press Enter to skip): " ADMIN_USER
+            echo "  sudo not available. Enter admin username (or Enter to skip):"
+            read -p "  Admin username: " ADMIN_USER
 
             if [ -n "$ADMIN_USER" ]; then
-                echo "  Enter password for $ADMIN_USER:"
-                # Test if we can su to the admin user
-                if su - "$ADMIN_USER" -c "echo 'Admin access confirmed'" 2>/dev/null; then
+                if su - "$ADMIN_USER" -c "echo 'ok'" 2>/dev/null | grep -q "ok"; then
                     HAVE_ADMIN=true
                     dsc_changed "admin:su (using $ADMIN_USER)"
                 else
-                    echo "  ⚠️  Could not authenticate as $ADMIN_USER"
-                    ADMIN_USER=""
                     dsc_skipped "admin:su (auth failed)"
                 fi
             else
-                dsc_skipped "admin:access (skipped by user)"
+                dsc_skipped "admin:access (skipped)"
             fi
         fi
-    fi
-    echo ""
-fi
-
-# ============================================================================
-# Homebrew Permissions Fix (macOS only, requires admin)
-# ============================================================================
-
-if [ "$DSC_PLATFORM" = "mac" ] && [ -d "/opt/homebrew" ]; then
-    # Check if Homebrew directories are writable
-    if [ ! -w "/opt/homebrew/Cellar" ] || [ ! -w "/opt/homebrew/bin" ]; then
         echo ""
-        echo "── Homebrew Permissions Fix ──"
-
-        if [ "$HAVE_ADMIN" = true ]; then
-            # Fix ownership for current user (not admin user)
-            if run_as_admin "chown -R $CURRENT_USER /opt/homebrew"; then
-                dsc_changed "fix:homebrew-permissions (fixed for $CURRENT_USER)"
-            else
-                dsc_failed "fix:homebrew-permissions"
-            fi
-
-            # Also fix for admin group to allow other admin users
-            if run_as_admin "chgrp -R admin /opt/homebrew && chmod -R g+w /opt/homebrew"; then
-                dsc_changed "fix:homebrew-admin-group (admin group has write access)"
-            fi
-        else
-            dsc_skipped "fix:homebrew-permissions (no admin access)"
-            echo "  To fix manually: sudo chown -R $CURRENT_USER /opt/homebrew"
-        fi
     fi
 fi
 
@@ -240,10 +213,10 @@ fi
 # Glances (system monitoring)
 if [ "$DSC_PLATFORM" = "mac" ]; then
     if command -v glances &>/dev/null; then
-        dsc_unchanged "pip:glances"
+        dsc_unchanged "brew:glances"
     elif command -v brew &>/dev/null; then
         echo -e "  ${_BLUE}Installing glances via Homebrew...${_NC}"
-        if brew install glances &>/dev/null; then
+        if dsc_run_brew install glances &>/dev/null; then
             dsc_changed "brew:glances (installed)"
         else
             dsc_failed "brew:glances"
@@ -485,7 +458,7 @@ if [ "$DSC_PLATFORM" = "mac" ]; then
         dsc_unchanged "app:Obsidian"
     elif command -v brew &>/dev/null; then
         echo -e "  ${_BLUE}Installing Obsidian...${_NC}"
-        if brew install --cask obsidian &>/dev/null; then
+        if dsc_run_brew install --cask obsidian &>/dev/null; then
             dsc_changed "app:Obsidian (installed)"
         else
             dsc_failed "app:Obsidian"

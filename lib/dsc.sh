@@ -94,6 +94,27 @@ dsc_run_privileged() {
 }
 
 # ============================================================================
+# Homebrew Execution (single-owner model)
+# ============================================================================
+
+# dsc_run_brew <args...>
+# Runs brew command - via BREW_ADMIN user if set, otherwise directly
+# Set BREW_ADMIN in setup.sh when current user doesn't own Homebrew
+dsc_run_brew() {
+    local args="$*"
+
+    if [ -n "${BREW_ADMIN:-}" ]; then
+        # Run as Homebrew owner via su
+        su - "$BREW_ADMIN" -c "brew $args" 2>/dev/null
+        return $?
+    else
+        # Current user owns Homebrew
+        brew $args
+        return $?
+    fi
+}
+
+# ============================================================================
 # Resource: Package
 # ============================================================================
 
@@ -111,30 +132,39 @@ ensure_package() {
     fi
 
     # Set: Install package
-    local install_cmd=""
-    local needs_admin=false
+    local success=false
     case "$DSC_PKG_MANAGER" in
-        brew)   install_cmd="brew install $brew_name" ;;
-        apt)    install_cmd="apt-get install -y -qq $apt_name"; needs_admin=true ;;
-        dnf)    install_cmd="dnf install -y -q $apt_name"; needs_admin=true ;;
-        yum)    install_cmd="yum install -y -q $apt_name"; needs_admin=true ;;
-        pacman) install_cmd="pacman -S --noconfirm $apt_name"; needs_admin=true ;;
+        brew)
+            # Use dsc_run_brew for single-owner homebrew model
+            if dsc_run_brew install "$brew_name" &>/dev/null; then
+                success=true
+            fi
+            ;;
+        apt)
+            if dsc_run_privileged "apt-get install -y -qq $apt_name"; then
+                success=true
+            fi
+            ;;
+        dnf)
+            if dsc_run_privileged "dnf install -y -q $apt_name"; then
+                success=true
+            fi
+            ;;
+        yum)
+            if dsc_run_privileged "yum install -y -q $apt_name"; then
+                success=true
+            fi
+            ;;
+        pacman)
+            if dsc_run_privileged "pacman -S --noconfirm $apt_name"; then
+                success=true
+            fi
+            ;;
         *)
             dsc_failed "package:$name (unknown package manager)"
             return 0
             ;;
     esac
-
-    local success=false
-    if [ "$needs_admin" = true ]; then
-        if dsc_run_privileged "$install_cmd"; then
-            success=true
-        fi
-    else
-        if eval "$install_cmd" &>/dev/null; then
-            success=true
-        fi
-    fi
 
     if [ "$success" = true ] && command -v "$name" &>/dev/null; then
         dsc_changed "package:$name (installed)"
