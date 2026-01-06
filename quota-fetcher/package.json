@@ -1,0 +1,7 @@
+{
+  "name": "quota-fetcher",
+  "type": "module",
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}

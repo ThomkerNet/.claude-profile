@@ -1,0 +1,72 @@
+# Large binaries / node_modules
+node_modules/
+tools/puppeteer/node_modules/
+tools/*/node_modules/
+
+# Ephemeral/generated data
+history.jsonl
+debug/
+file-history/
+shell-snapshots/
+statsig/
+telemetry/
+todos/
+stats-cache.json
+
+# IDE state
+ide/
+
+# Project-specific caches
+projects/
+
+# Telegram config with secrets
+hooks/telegram-config.json
+
+# Telegram session state (ephemeral - old PowerShell)
+hooks/telegram/sessions.json
+hooks/telegram/queues/
+hooks/telegram/last_update_id.txt
+hooks/telegram/current_session_*.txt
+
+# Telegram Bun bridge
+hooks/telegram-bun/telegram.db
+hooks/telegram-bun/node_modules/
+hooks/telegram-bun/claude-telegram.exe
+
+# Generated files (use .template versions)
+settings.json
+commands/telegram.md
+commands/telegram-end.md
+commands/vault.md
+commands/vault-*.md
+!commands/vault-*.template.md
+
+# Vaultwarden session/state (sensitive)
+tools/vaultwarden/.bw-session
+tools/vaultwarden/.bw-serve.pid
+tools/vaultwarden/.bw-serve.ttl
+tools/vaultwarden/audit.log
+
+# Credentials
+.credentials.json
+
+# Local settings (machine-specific permissions etc)
+settings.local.json
+.claude/settings.local.json
+
+# Local scripts
+check-arr-chrome.js
+check-tknet-dashboard.js
+screenshot-dashboard.js
+update-grafana-dashboard.js
+
+# Memory MCP (machine-specific knowledge, may contain sensitive info)
+memory.jsonl
+
+# Quota fetcher ephemeral data
+.quota-cache
+.quota-screenshot.png
+quota-browser/
+quota-fetcher/node_modules/
+quota-fetcher/fetch.log
+quota-fetcher/bun.lockb

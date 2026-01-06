@@ -1,0 +1,50 @@
+{
+  "description": "MCP servers to install. Run setup script to configure these.",
+  "servers": [
+    {
+      "name": "google-workspace",
+      "command": "uvx workspace-mcp --tool-tier core",
+      "description": "Google Workspace: Gmail, Drive, Calendar, Docs",
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "{{GOOGLE_OAUTH_CLIENT_ID}}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "{{GOOGLE_OAUTH_CLIENT_SECRET}}",
+        "USER_GOOGLE_EMAIL": "simon@boroughnexus.com",
+        "OAUTHLIB_INSECURE_TRANSPORT": "1"
+      }
+    },
+    {
+      "name": "memory",
+      "command": "npx -y @modelcontextprotocol/server-memory",
+      "description": "Persistent knowledge graph memory across sessions",
+      "env": {
+        "MEMORY_FILE_PATH": "{{CLAUDE_HOME}}/memory.jsonl"
+      }
+    },
+    {
+      "name": "context7",
+      "command": "npx -y @upstash/context7-mcp",
+      "description": "Context7 for up-to-date library documentation"
+    },
+    {
+      "name": "puppeteer",
+      "command": "npx -y @modelcontextprotocol/server-puppeteer",
+      "description": "Browser automation and screenshots",
+      "env": {
+        "PUPPETEER_LAUNCH_OPTIONS": "{\"headless\":true,\"args\":[\"--no-sandbox\",\"--disable-setuid-sandbox\",\"--disable-dev-shm-usage\",\"--disable-gpu\"],\"defaultViewport\":{\"width\":1920,\"height\":1080}}"
+      }
+    },
+    {
+      "name": "firecrawl",
+      "command": "npx -y firecrawl-mcp",
+      "description": "Web scraping and search",
+      "env": {
+        "FIRECRAWL_API_KEY": "fc-d80156617fa04c8ebd0dc29d6111b0d9"
+      }
+    },
+    {
+      "name": "sequential-thinking",
+      "command": "npx -y @modelcontextprotocol/server-sequential-thinking",
+      "description": "Step-by-step problem solving"
+    }
+  ]
+}

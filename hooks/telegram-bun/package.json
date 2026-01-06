@@ -1,0 +1,20 @@
+{
+  "name": "claude-telegram",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "claude-telegram": "./index.ts"
+  },
+  "scripts": {
+    "start": "bun run index.ts",
+    "listen": "bun run index.ts listen",
+    "build": "bun build ./index.ts --compile --outfile claude-telegram"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

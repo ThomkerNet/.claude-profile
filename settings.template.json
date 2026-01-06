@@ -1,0 +1,43 @@
+{
+  "alwaysThinkingEnabled": true,
+  "statusLine": {
+    "type": "command",
+    "command": "{{STATUSLINE_PATH}}"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/stop-check.ts"
+          },
+          {
+            "type": "command",
+            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/notify.ts"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/check.ts"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/poll.ts"
+          }
+        ]
+      }
+    ]
+  }
+}

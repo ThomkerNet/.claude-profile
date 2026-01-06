@@ -1,0 +1,36 @@
+#!/bin/bash
+# bw-bnx - Bitwarden CLI wrapper for BoroughNexus (work) account
+# Server: https://vault.boroughnexus.com
+# Email: simon@boroughnexus.com
+#
+# Uses separate data directory to allow multiple server configs.
+# Operator uses this to generate session tokens for Claude.
+
+set -euo pipefail
+
+readonly BW_DATA_DIR="$HOME/.config/bitwarden-cli/bnx"
+readonly BW_SERVER_URL="https://vault.boroughnexus.com"
+readonly BW_EMAIL="simon@boroughnexus.com"
+
+# Ensure data directory exists
+mkdir -p "$BW_DATA_DIR"
+
+# Export env vars for bw CLI (isolates from other vaults)
+export BITWARDENCLI_APPDATA_DIR="$BW_DATA_DIR"
+
+# Ensure server is configured in this data dir (first run only)
+if [[ ! -f "$BW_DATA_DIR/data.json" ]] || ! grep -q "$BW_SERVER_URL" "$BW_DATA_DIR/data.json" 2>/dev/null; then
+    bw config server "$BW_SERVER_URL" >/dev/null 2>&1 || true
+fi
+
+# Handle login specially to pre-fill email
+if [[ "${1:-}" == "login" ]]; then
+    shift
+    if [[ "$*" != *"@"* ]]; then
+        exec bw login "$BW_EMAIL" "$@"
+    else
+        exec bw login "$@"
+    fi
+else
+    exec bw "$@"
+fi
