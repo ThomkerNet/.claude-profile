@@ -593,6 +593,7 @@ esac
 
 echo "  1. Reload shell: $RELOAD_CMD"
 echo "  2. Run 'claude' to start Claude Code"
-command -v bw &>/dev/null && echo "  3. Run 'bw login' for Vaultwarden access"
+echo "  3. Run './setup-repos.sh' to clone organization repos to ~/git-bnx"
+command -v bw &>/dev/null && echo "  4. Run 'bw login' for Vaultwarden access"
 
 echo ""
