@@ -11,7 +11,7 @@
  * This is a per-project hook - only checks the current working directory.
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync, realpathSync } from "fs";
 import { join, dirname } from "path";
 import { homedir } from "os";
 
@@ -43,6 +43,7 @@ const ACTIVITY_FILE = join(CLAUDE_HOME, ".spec-checker-activity.json");
 const SPEC_REGISTRY = join(CLAUDE_HOME, ".spec-registry.json");
 const IDLE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 const CHECK_COOLDOWN_MS = 60 * 1000; // Don't check more than once per minute
+const MAX_SPEC_SIZE_BYTES = 100 * 1024; // 100KB max spec file size
 
 /**
  * Simple MD5 hash (for deduplication, not security)
@@ -138,6 +139,14 @@ function findNewSpecs(projectDir: string, notifiedHashes: string[]): SpecInfo[] 
     return newSpecs;
   }
 
+  // Get real path of spec directory for path traversal protection
+  let realSpecDir: string;
+  try {
+    realSpecDir = realpathSync(specDir);
+  } catch {
+    return newSpecs;
+  }
+
   try {
     const files = readdirSync(specDir);
 
@@ -145,6 +154,27 @@ function findNewSpecs(projectDir: string, notifiedHashes: string[]): SpecInfo[] 
       if (!file.match(/-SPEC\.(md|MD)$/i)) continue;
 
       const specPath = join(specDir, file);
+
+      // Path traversal protection: ensure file is within spec directory
+      try {
+        const realSpecPath = realpathSync(specPath);
+        if (!realSpecPath.startsWith(realSpecDir)) {
+          continue;  // Skip files outside spec directory (symlink attack)
+        }
+      } catch {
+        continue;  // Skip if we can't resolve the path
+      }
+
+      // File size check: skip files larger than MAX_SPEC_SIZE_BYTES
+      try {
+        const stats = statSync(specPath);
+        if (stats.size > MAX_SPEC_SIZE_BYTES) {
+          continue;  // Skip oversized files
+        }
+      } catch {
+        continue;  // Skip if we can't stat the file
+      }
+
       const content = readFileSync(specPath, "utf-8");
       const hash = simpleHash(content);
 

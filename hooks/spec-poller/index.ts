@@ -11,7 +11,7 @@
  * This enables agent-to-agent handoff without user interaction.
  */
 
-import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from "fs";
+import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync, statSync, realpathSync, unlinkSync } from "fs";
 import { join, dirname } from "path";
 import { homedir } from "os";
 
@@ -46,12 +46,40 @@ const POLL_INTERVAL_MS = 30 * 1000;  // 30 seconds
 const MAX_POLL_DURATION_MS = 3 * 60 * 60 * 1000;  // 3 hours
 const MAX_POLLS = Math.floor(MAX_POLL_DURATION_MS / POLL_INTERVAL_MS);  // ~360 polls
 const MAX_PROCESSED_SPECS = 100;  // Limit to prevent unbounded growth
+const MAX_SPEC_SIZE_BYTES = 100 * 1024;  // 100KB max spec file size
+const STATE_FILE_MAX_AGE_MS = 24 * 60 * 60 * 1000;  // 24 hours
 
 /**
  * Check if spec polling is enabled
  */
 function isPollingEnabled(): boolean {
   return existsSync(ENABLED_FILE);
+}
+
+/**
+ * Clean up old state files (older than 24 hours)
+ */
+function cleanupOldStateFiles(): void {
+  try {
+    const files = readdirSync(CLAUDE_HOME);
+    const now = Date.now();
+
+    for (const file of files) {
+      if (!file.startsWith(".spec-poller-state-")) continue;
+
+      const filePath = join(CLAUDE_HOME, file);
+      try {
+        const stats = statSync(filePath);
+        if (now - stats.mtimeMs > STATE_FILE_MAX_AGE_MS) {
+          unlinkSync(filePath);
+        }
+      } catch {
+        // Ignore errors for individual files
+      }
+    }
+  } catch {
+    // Ignore cleanup errors
+  }
 }
 
 /**
@@ -134,6 +162,14 @@ function findNewSpecs(projectDir: string, processedHashes: string[]): SpecInfo[]
     return newSpecs;
   }
 
+  // Get real path of spec directory for path traversal protection
+  let realSpecDir: string;
+  try {
+    realSpecDir = realpathSync(specDir);
+  } catch {
+    return newSpecs;
+  }
+
   try {
     const files = readdirSync(specDir);
 
@@ -141,6 +177,27 @@ function findNewSpecs(projectDir: string, processedHashes: string[]): SpecInfo[]
       if (!file.match(/-SPEC\.(md|MD)$/i)) continue;
 
       const specPath = join(specDir, file);
+
+      // Path traversal protection: ensure file is within spec directory
+      try {
+        const realSpecPath = realpathSync(specPath);
+        if (!realSpecPath.startsWith(realSpecDir)) {
+          continue;  // Skip files outside spec directory (symlink attack)
+        }
+      } catch {
+        continue;  // Skip if we can't resolve the path
+      }
+
+      // File size check: skip files larger than MAX_SPEC_SIZE_BYTES
+      try {
+        const stats = statSync(specPath);
+        if (stats.size > MAX_SPEC_SIZE_BYTES) {
+          continue;  // Skip oversized files
+        }
+      } catch {
+        continue;  // Skip if we can't stat the file
+      }
+
       const content = readFileSync(specPath, "utf-8");
       const hash = simpleHash(content);
 
@@ -194,6 +251,9 @@ async function main() {
     console.log(JSON.stringify({ decision: "allow" }));
     return;
   }
+
+  // Cleanup old state files periodically (runs on each poll)
+  cleanupOldStateFiles();
 
   try {
     const hookData: HookInput = JSON.parse(input);
