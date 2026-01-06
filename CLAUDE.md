@@ -31,6 +31,18 @@ For detailed docs: load `profile-reference` skill or ask about specific feature.
 
 **Setup:** Run `./setup-repos.sh` to clone all org repos (auto-discovers from GitHub).
 
+**Project Relationships:**
+- **Siblings** = Same parent org (can share code/patterns directly)
+  - `BriefHours-App` ↔ `BriefHours-Web` (both under BriefHours/)
+  - `BNX-Web` ↔ `BNX-Docs-Architecture` (both under BNX/)
+- **Cousins** = Same grandparent (BoroughNexus is parent company)
+  - `BriefHours/*` ↔ `BNX/*` (BriefHours is a BNX product)
+  - Share infrastructure patterns, credentials, deployment approaches
+- **Unrelated** = Different family (ThomkerNet is personal, not BNX)
+  - `TKN/*` repos are Simon's personal/homelab, separate from work
+
+When working on a project, check siblings for shared patterns before creating new ones.
+
 ---
 
 ## CRITICAL: Deployment Rules
