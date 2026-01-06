@@ -33,7 +33,7 @@ dsc_changed()   { echo -e "${_GREEN}[changed]${_NC} $1"; ((DSC_CHANGES++)) || tr
 dsc_unchanged() { echo -e "${_BLUE}[ok]${_NC} $1"; ((DSC_UNCHANGED++)) || true; }
 dsc_failed()    { echo -e "${_RED}[failed]${_NC} $1"; ((DSC_FAILED++)) || true; DSC_FAILURES+=("$1"); }
 dsc_skipped()   { echo -e "${_YELLOW}[skipped]${_NC} $1"; }
-dsc_info()      { [ "$DSC_VERBOSE" = true ] && echo -e "${_BLUE}[info]${_NC} $1"; }
+dsc_info()      { [ "$DSC_VERBOSE" = true ] && echo -e "${_BLUE}[info]${_NC} $1" || true; }
 
 # ============================================================================
 # Platform Detection

@@ -78,21 +78,28 @@ if [ "$DSC_PLATFORM" = "mac" ]; then
             echo ""
             echo "── Homebrew Access ──"
             echo "  Homebrew is owned by: $BREW_OWNER"
-            echo "  You ($CURRENT_USER) will need their credentials for brew commands."
-            echo ""
-            read -p "  Enter password for $BREW_OWNER (or press Enter to skip brew installs): " -s BREW_PASS
-            echo ""
+
+            # Check if credentials already provided via environment
+            if [ -n "${BREW_PASS:-}" ]; then
+                echo "  Using credentials from environment."
+            else
+                echo "  You ($CURRENT_USER) will need their credentials for brew commands."
+                echo ""
+                read -p "  Enter password for $BREW_OWNER (or press Enter to skip brew installs): " -s BREW_PASS
+                echo ""
+            fi
 
             if [ -n "$BREW_PASS" ]; then
                 # Test authentication using expect (macOS su requires TTY)
+                # Note: log_user must be 1 to capture AUTH_OK output
                 auth_result=$(expect -c "
-                    log_user 0
+                    log_user 1
                     spawn su - $BREW_OWNER -c \"echo AUTH_OK\"
                     expect \"Password:\"
+                    log_user 0
                     send \"$BREW_PASS\r\"
+                    log_user 1
                     expect eof
-                    catch wait result
-                    exit [lindex \$result 3]
                 " 2>&1)
 
                 if echo "$auth_result" | grep -q "AUTH_OK"; then
@@ -356,7 +363,8 @@ if [ "$DSC_PLATFORM" = "mac" ]; then
 
         # Load service if not running
         if ! launchctl list 2>/dev/null | grep -q "com.claude.glances"; then
-            if launchctl load "$GLANCES_PLIST" 2>/dev/null; then
+            # Use subshell to isolate launchctl signal handling
+            if (launchctl load "$GLANCES_PLIST" 2>/dev/null); then
                 dsc_changed "service:com.claude.glances (started)"
             else
                 dsc_failed "service:com.claude.glances (load failed)"
