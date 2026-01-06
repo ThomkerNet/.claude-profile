@@ -4,6 +4,35 @@ For detailed docs: load `profile-reference` skill or ask about specific feature.
 
 ---
 
+## Directory Structure
+
+**Claude Profile:**
+```
+~/.claude-profile/     # Git repo (version controlled) - this repo
+~/.claude/             # Active profile (symlinks to above + runtime files)
+```
+
+**Code Repositories** (`~/git-bnx/`):
+```
+~/git-bnx/
+├── TKN/              # ThomkerNet org (personal/homelab)
+│   ├── TKNet-Homelab-Docs/
+│   ├── .claude-profile/
+│   └── ...
+├── BNX/              # BoroughNexus org (company)
+│   ├── BNX-MacMini-BareMetal-Setup/
+│   ├── BNX-Web/
+│   └── ...
+└── BriefHours/       # BriefHours org (product)
+    ├── BriefHours-App/
+    ├── BriefHours-Web/
+    └── ...
+```
+
+**Setup:** Run `./setup-repos.sh` to clone all org repos (auto-discovers from GitHub).
+
+---
+
 ## CRITICAL: Deployment Rules
 
 **NEVER assume deployment targets.** Before deploying:
@@ -109,7 +138,7 @@ Sonnet (default) → Haiku (simple) → Opus (architecture/planning). Auto-route
 
 ## Homelab
 
-Docs: `~/git/TKNet-Homelab-Docs/` | Secrets: `secrets.env` in that dir.
+Docs: `~/git-bnx/TKN/TKNet-Homelab-Docs/` | Secrets: `secrets.env` in that dir.
 
 For Cloudflare tunnel/access setup, check `services/cloudflare.md`.
 
