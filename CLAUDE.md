@@ -41,7 +41,10 @@ For detailed docs: load `profile-reference` skill or ask about specific feature.
 - **Unrelated** = Different family (ThomkerNet is personal, not BNX)
   - `TKN/*` repos are Simon's personal/homelab, separate from work
 
-When working on a project, check siblings for shared patterns before creating new ones.
+**Pattern coupling:**
+- Siblings should stay **tightly coupled** - same conventions, shared utilities, consistent patterns
+- Cousins **may diverge** - different tech stacks or approaches are acceptable if justified
+- Always check siblings first before creating new patterns
 
 ---
 
