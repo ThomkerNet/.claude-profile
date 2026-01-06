@@ -6,12 +6,7 @@
 # Get hostname (short form)
 HOSTNAME_SHORT=$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo "unknown")
 
-# Skip custom status line over SSH to prevent flashing
-# Claude Code redraws on every keystroke; even cached output causes flicker
-if [ -n "$SSH_CONNECTION" ]; then
-    cat > /dev/null  # consume stdin
-    exit 1  # error exit - might disable status line entirely
-fi
+# Note: SSH flicker prevention removed - caching handles it now
 
 # Detect platform
 OS_TYPE="$(uname -s)"
@@ -240,8 +235,4 @@ output=$(printf "%-8s %s:%s%s%s | %s (%s%%)%s%s%s | +%s -%s%s\n" \
     "$(echo "$data" | jq -r '.cost.total_lines_removed // 0')" \
     "$costStr")
 
-# Cache output for SSH throttling
-if [ -n "$SSH_CONNECTION" ]; then
-    echo "$output" > "$CACHE_FILE"
-fi
 echo "$output"
