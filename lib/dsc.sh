@@ -67,6 +67,33 @@ DSC_PLATFORM=$(detect_platform)
 DSC_PKG_MANAGER=$(detect_pkg_manager)
 
 # ============================================================================
+# Privileged Command Execution
+# ============================================================================
+
+# dsc_run_privileged <command>
+# Runs a command with admin privileges (uses HAVE_ADMIN/ADMIN_USER set by setup.sh)
+dsc_run_privileged() {
+    local cmd="$1"
+
+    # Check if we have admin access (set by setup.sh after sourcing this file)
+    if [ "${HAVE_ADMIN:-false}" = true ]; then
+        if [ -n "${ADMIN_USER:-}" ]; then
+            # Use su to run as admin user
+            su - "$ADMIN_USER" -c "$cmd" 2>/dev/null
+            return $?
+        else
+            # Current user has sudo access
+            sudo sh -c "$cmd" 2>/dev/null
+            return $?
+        fi
+    else
+        # No admin access - try sudo anyway (might prompt or fail)
+        sudo sh -c "$cmd" 2>/dev/null
+        return $?
+    fi
+}
+
+# ============================================================================
 # Resource: Package
 # ============================================================================
 
@@ -85,23 +112,33 @@ ensure_package() {
 
     # Set: Install package
     local install_cmd=""
+    local needs_admin=false
     case "$DSC_PKG_MANAGER" in
         brew)   install_cmd="brew install $brew_name" ;;
-        apt)    install_cmd="sudo apt-get install -y -qq $apt_name" ;;
-        dnf)    install_cmd="sudo dnf install -y -q $apt_name" ;;
-        yum)    install_cmd="sudo yum install -y -q $apt_name" ;;
-        pacman) install_cmd="sudo pacman -S --noconfirm $apt_name" ;;
+        apt)    install_cmd="apt-get install -y -qq $apt_name"; needs_admin=true ;;
+        dnf)    install_cmd="dnf install -y -q $apt_name"; needs_admin=true ;;
+        yum)    install_cmd="yum install -y -q $apt_name"; needs_admin=true ;;
+        pacman) install_cmd="pacman -S --noconfirm $apt_name"; needs_admin=true ;;
         *)
             dsc_failed "package:$name (unknown package manager)"
-            return 1
+            return 0
             ;;
     esac
 
-    if eval "$install_cmd" &>/dev/null; then
-        if command -v "$name" &>/dev/null; then
-            dsc_changed "package:$name (installed)"
-            return 0
+    local success=false
+    if [ "$needs_admin" = true ]; then
+        if dsc_run_privileged "$install_cmd"; then
+            success=true
         fi
+    else
+        if eval "$install_cmd" &>/dev/null; then
+            success=true
+        fi
+    fi
+
+    if [ "$success" = true ] && command -v "$name" &>/dev/null; then
+        dsc_changed "package:$name (installed)"
+        return 0
     fi
 
     dsc_failed "package:$name (install failed)"
