@@ -184,21 +184,27 @@ if (( $(echo "$costUsd > 0" | bc -l 2>/dev/null) )); then
     costStr=" • \$$(printf '%.4f' "$costUsd")"
 fi
 
-# Read Max quota from cache (fetched separately)
+# Read quota from cache, fallback to subscription type from credentials
 quotaStr=""
 quotaFile="${HOME}/.claude/.quota-cache"
+credsFile="${HOME}/.claude/.credentials.json"
+
 if [ -f "$quotaFile" ]; then
     quotaStatus=$(jq -r '.status // "unknown"' "$quotaFile" 2>/dev/null)
     if [ "$quotaStatus" = "ok" ]; then
-        # New format: session, weekly, sonnet
         sessionPct=$(jq -r '.session.percent // 0' "$quotaFile" 2>/dev/null)
         weeklyPct=$(jq -r '.weekly.percent // 0' "$quotaFile" 2>/dev/null)
-        # Show: S:session% W:weekly%
         if [ "$sessionPct" != "0" ] || [ "$weeklyPct" != "0" ]; then
             quotaStr=" | S:${sessionPct}% W:${weeklyPct}%"
         fi
-    elif [ "$quotaStatus" = "auth_required" ]; then
-        quotaStr=" | Q:login"
+    fi
+fi
+
+# Fallback: show subscription type from credentials if no quota data
+if [ -z "$quotaStr" ] && [ -f "$credsFile" ]; then
+    subType=$(jq -r '.claudeAiOauth.subscriptionType // ""' "$credsFile" 2>/dev/null | tr '[:lower:]' '[:upper:]')
+    if [ -n "$subType" ] && [ "$subType" != "NULL" ]; then
+        quotaStr=" | $subType"
     fi
 fi
 
