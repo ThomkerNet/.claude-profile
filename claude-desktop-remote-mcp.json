@@ -1,0 +1,68 @@
+{
+  "$comment": "Claude Desktop MCP config for remote servers on bnx-macmini-1 via Tailscale",
+  "$note": "MCP uses stdio protocol - each Desktop session spawns a fresh server. SSH ControlMaster reduces connection overhead.",
+  "$setup": [
+    "1. Copy remote-mcp-manager.sh to remote: scp remote-mcp-manager.sh sbarker@bnx-macmini-1:~/.local/bin/",
+    "2. Add SSH config from claude-desktop-ssh-config.txt to client ~/.ssh/config",
+    "3. Create socket dir: mkdir -p ~/.ssh/sockets && chmod 700 ~/.ssh/sockets",
+    "4. Merge this into Claude Desktop config (~/Library/Application Support/Claude/claude_desktop_config.json)"
+  ],
+  "mcpServers": {
+    "BNX_BNX-Docs-Architecture": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-Docs-Architecture"]
+    },
+    "BNX_BNX-Docs-Business": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-Docs-Business"]
+    },
+    "BNX_BNX-TFAzure-SharedServices": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-TFAzure-SharedServices"]
+    },
+    "BNX_BNX-Web": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-Web"]
+    },
+    "BNX_BriefHours-App": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BriefHours-App"]
+    },
+    "BriefHours_BNX-Web": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BNX-Web"]
+    },
+    "BriefHours_BriefHours-App": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BriefHours-App"]
+    },
+    "BriefHours_BriefHours-Deploy": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BriefHours-Deploy"]
+    },
+    "BriefHours_BriefHours-Docs-Architecture": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BriefHours-Docs-Architecture"]
+    },
+    "BriefHours_BriefHours-Docs-Business": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BriefHours-Docs-Business"]
+    },
+    "BriefHours_BriefHours-Inference": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BriefHours-Inference"]
+    },
+    "BriefHours_BriefHours-TFAzure-Infra": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BriefHours-TFAzure-Infra"]
+    },
+    "TKN_TKNet-Claude-General-Chat": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect TKN_TKNet-Claude-General-Chat"]
+    },
+    "TKN_TKNet-DockArr-Stack": {
+      "command": "ssh",
+      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect TKN_TKNet-DockArr-Stack"]
+    }
+  }
+}

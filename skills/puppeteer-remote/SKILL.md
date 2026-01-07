@@ -119,17 +119,37 @@ ssh -L 9222:localhost:9222 user@remote-host -N &
 
 Then Puppeteer connects to `localhost:9222` as if local.
 
-### Option B: Direct Network (Less Secure)
+### Option B: Port Forwarding (Less Secure)
+
+> **Note:** Chrome removed `--remote-debugging-address=0.0.0.0` for security reasons in recent versions. Use port forwarding instead.
 
 Only for isolated/trusted networks.
 
-**On remote machine:**
+**On remote machine - Start Chrome normally (localhost):**
 ```bash
 # Mac/Linux
-google-chrome --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir="/tmp/chrome-puppeteer" &
+google-chrome --remote-debugging-port=9222 --user-data-dir="/tmp/chrome-puppeteer" &
 
 # Windows PowerShell
-& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --remote-debugging-address=0.0.0.0 --user-data-dir="$env:TEMP\chrome-puppeteer"
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="$env:TEMP\chrome-puppeteer"
+```
+
+**Then forward the port to 0.0.0.0:**
+
+**Windows (netsh - run as Admin):**
+```powershell
+netsh interface portproxy add v4tov4 listenport=9222 listenaddress=0.0.0.0 connectport=9222 connectaddress=127.0.0.1
+```
+
+**Linux (socat):**
+```bash
+socat TCP-LISTEN:9223,fork,bind=0.0.0.0 TCP:127.0.0.1:9222 &
+# Connect to port 9223 from remote
+```
+
+**To remove Windows port forwarding later:**
+```powershell
+netsh interface portproxy delete v4tov4 listenport=9222 listenaddress=0.0.0.0
 ```
 
 **Get remote IP:**
@@ -150,32 +170,11 @@ hostname -I | awk '{print $1}'
 New-NetFirewallRule -DisplayName "Chrome Remote Debug" -Direction Inbound -Protocol TCP -LocalPort 9222 -RemoteAddress YOUR_CLAUDE_IP -Action Allow
 ```
 
-### MCP Configuration for Remote
+### Why SSH Tunnel is Required
 
-> **Note:** The standard `@anthropic/mcp-server-puppeteer` may not support remote connections out of the box. Verify by checking if it respects `PUPPETEER_BROWSER_WS_ENDPOINT`.
+> **WARNING:** The standard `@modelcontextprotocol/server-puppeteer` does NOT support connecting to remote browsers. It only supports `PUPPETEER_LAUNCH_OPTIONS` for launching local browsers, not `browserWSEndpoint` for connecting to existing ones.
 
-First, get the WebSocket endpoint from the remote Chrome:
-```bash
-curl http://<REMOTE_IP>:9222/json/version | grep webSocketDebuggerUrl
-# Returns something like: ws://192.168.1.50:9222/devtools/browser/abc123
-```
-
-If MCP supports it, update `~/.claude/settings.json` (merge with existing config):
-```json
-{
-  "mcpServers": {
-    "puppeteer": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/mcp-server-puppeteer"],
-      "env": {
-        "PUPPETEER_BROWSER_WS_ENDPOINT": "ws://<REMOTE_IP>:9222/devtools/browser/<ID>"
-      }
-    }
-  }
-}
-```
-
-Restart Claude Code for changes to take effect (note: this clears current session context).
+**Bottom line:** For remote Puppeteer control, use SSH tunnel to make the remote port appear local. The MCP will then connect to `localhost:9222` which tunnels to the remote Chrome.
 
 ---
 
@@ -216,7 +215,9 @@ Remove-Item -Recurse "$env:TEMP\chrome-puppeteer"  # Windows
 |-------|----------|
 | "Address already in use" | Another Chrome using port 9222. Kill it or use `--remote-debugging-port=9223` |
 | Connection refused | Check Chrome is running with debug flag, check firewall |
+| Chrome listening on 127.0.0.1 only | Chrome removed `--remote-debugging-address=0.0.0.0`. Use SSH tunnel or netsh port forwarding |
+| Timeout from remote | Use SSH tunnel or port forwarding (netsh/socat). Check firewall allows port 9222 |
 | Can't find Chrome | Run `which google-chrome` (Linux), `where chrome` (Win), check alternate paths above |
-| MCP ignores remote config | Standard MCP may not support `PUPPETEER_BROWSER_WS_ENDPOINT` - verify or use custom wrapper |
+| MCP ignores remote config | Standard MCP doesn't support `browserWSEndpoint`. Use SSH tunnel instead |
 | Zombie Chrome processes | Use cleanup commands above |
 

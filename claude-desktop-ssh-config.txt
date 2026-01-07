@@ -1,0 +1,28 @@
+# Add to ~/.ssh/config on the CLIENT machine (where Claude Desktop runs)
+# This enables SSH connection multiplexing - 14 MCP servers share 1 TCP connection
+
+Host bnx-macmini-1
+    # Use Tailscale hostname/IP
+    HostName bnx-macmini-1
+    User sbarker
+
+    # Connection multiplexing (all connections share one socket)
+    ControlMaster auto
+    ControlPath ~/.ssh/sockets/%r@%h-%p
+    ControlPersist 10m
+
+    # Keep-alive to detect dead connections
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+
+    # Security
+    StrictHostKeyChecking yes
+    IdentitiesOnly yes
+    # IdentityFile ~/.ssh/id_ed25519  # Uncomment and set your key
+
+    # Performance
+    Compression yes
+    TCPKeepAlive yes
+
+# Create the sockets directory:
+#   mkdir -p ~/.ssh/sockets && chmod 700 ~/.ssh/sockets
