@@ -70,3 +70,9 @@ quota-browser/
 quota-fetcher/node_modules/
 quota-fetcher/fetch.log
 quota-fetcher/bun.lockb
+
+# Generated output (images, etc) - keep structure via .gitkeep
+output/**
+!output/
+!output/**/
+!output/**/.gitkeep
