@@ -278,9 +278,10 @@ ensure_symlink "$REPO_DIR/tools" "$CLAUDE_HOME/tools" "tools/"
 ensure_symlink "$REPO_DIR/quota-fetcher" "$CLAUDE_HOME/quota-fetcher" "quota-fetcher/"
 ensure_symlink "$REPO_DIR/services" "$CLAUDE_HOME/services" "services/"
 ensure_symlink "$REPO_DIR/lib" "$CLAUDE_HOME/lib" "lib/"
-
-# CLAUDE.md is copied (not symlinked) because Claude reads it directly
-ensure_file_copy "$REPO_DIR/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md" "CLAUDE.md"
+ensure_symlink "$REPO_DIR/output" "$CLAUDE_HOME/output" "output/"
+ensure_symlink "$REPO_DIR/plugins" "$CLAUDE_HOME/plugins" "plugins/"
+ensure_symlink "$REPO_DIR/docs" "$CLAUDE_HOME/docs" "docs/"
+ensure_symlink "$REPO_DIR/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md" "CLAUDE.md"
 
 # ============================================================================
 # Step 5: Settings & Templates
