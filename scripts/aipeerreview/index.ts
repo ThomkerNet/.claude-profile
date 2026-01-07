@@ -13,11 +13,33 @@
 
 import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync, rmSync } from "fs";
 import { resolve, basename, join } from "path";
-import { exec } from "child_process";
-import { promisify } from "util";
+import { spawn } from "child_process";
 import { tmpdir } from "os";
 
-const execAsync = promisify(exec);
+// Track temp directories for cleanup on signals
+const tempDirsToCleanup = new Set<string>();
+
+// Cleanup handler for graceful shutdown
+function cleanupTempDirs(): void {
+  for (const dir of tempDirsToCleanup) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch {
+      // Best effort cleanup
+    }
+  }
+  tempDirsToCleanup.clear();
+}
+
+// Register signal handlers
+process.on("SIGINT", () => {
+  cleanupTempDirs();
+  process.exit(130);
+});
+process.on("SIGTERM", () => {
+  cleanupTempDirs();
+  process.exit(143);
+});
 
 // All available models with their characteristics
 const ALL_MODELS = {
@@ -138,92 +160,141 @@ const REVIEW_TYPE_MODELS: Record<string, { models: ModelId[]; focusAreas: string
 
 type ReviewType = keyof typeof REVIEW_TYPE_MODELS;
 
-// Auto-detect review type from content
+// Auto-detect review type from content using word boundaries
 function detectReviewType(content: string): ReviewType {
   const contentLower = content.toLowerCase();
 
-  const typePatterns: Array<{ type: ReviewType; patterns: string[]; weight: number }> = [
+  // Use word boundary patterns to avoid false matches (e.g., "auth" in "author")
+  const typePatterns: Array<{ type: ReviewType; patterns: RegExp[]; weight: number }> = [
     {
       type: "security",
-      patterns: ["security", "auth", "vulnerability", "injection", "xss", "csrf", "permission", "credential", "encrypt", "token", "oauth", "jwt"],
+      patterns: [
+        /\bsecurity\b/gi, /\bauth(?:entication|orization)?\b/gi, /\bvulnerabilit(?:y|ies)\b/gi,
+        /\binjection\b/gi, /\bxss\b/gi, /\bcsrf\b/gi, /\bpermissions?\b/gi,
+        /\bcredentials?\b/gi, /\bencrypt(?:ion|ed)?\b/gi, /\btokens?\b/gi, /\boauth\b/gi, /\bjwt\b/gi
+      ],
       weight: 0,
     },
     {
       type: "architecture",
-      patterns: ["architecture", "design", "pattern", "structure", "scalab", "microservice", "monolith", "component", "module", "layer", "dependency"],
+      patterns: [
+        /\barchitecture\b/gi, /\bdesign\s*pattern\b/gi, /\bstructure\b/gi,
+        /\bscalab(?:le|ility)\b/gi, /\bmicroservices?\b/gi, /\bmonolith\b/gi,
+        /\bcomponents?\b/gi, /\bmodules?\b/gi, /\blayers?\b/gi, /\bdependenc(?:y|ies)\b/gi
+      ],
       weight: 0,
     },
     {
       type: "bug",
-      patterns: ["bug", "fix", "error", "exception", "crash", "issue", "broken", "failing", "null", "undefined", "race condition"],
+      patterns: [
+        /\bbugs?\b/gi, /\bfix(?:es|ed|ing)?\b/gi, /\berrors?\b/gi, /\bexceptions?\b/gi,
+        /\bcrash(?:es|ed|ing)?\b/gi, /\bissues?\b/gi, /\bbroken\b/gi, /\bfailing\b/gi,
+        /\bnull\b/gi, /\bundefined\b/gi, /\brace\s*condition\b/gi
+      ],
       weight: 0,
     },
     {
       type: "performance",
-      patterns: ["performance", "optim", "slow", "fast", "memory", "cache", "latency", "throughput", "bottleneck", "efficient", "complexity"],
+      patterns: [
+        /\bperformance\b/gi, /\boptimiz(?:e|ation|ed|ing)\b/gi, /\bslow\b/gi, /\bfast(?:er)?\b/gi,
+        /\bmemory\b/gi, /\bcach(?:e|ing|ed)\b/gi, /\blatency\b/gi, /\bthroughput\b/gi,
+        /\bbottleneck\b/gi, /\befficient\b/gi, /\bcomplexity\b/gi
+      ],
       weight: 0,
     },
     {
       type: "api",
-      patterns: ["api", "endpoint", "rest", "graphql", "request", "response", "route", "handler", "middleware", "contract"],
+      patterns: [
+        /\bapi\b/gi, /\bendpoints?\b/gi, /\brest(?:ful)?\b/gi, /\bgraphql\b/gi,
+        /\brequests?\b/gi, /\bresponses?\b/gi, /\broutes?\b/gi, /\bhandlers?\b/gi,
+        /\bmiddleware\b/gi, /\bcontracts?\b/gi
+      ],
       weight: 0,
     },
     {
       type: "test",
-      patterns: ["test", "spec", "coverage", "mock", "stub", "assert", "expect", "jest", "vitest", "pytest", "unit test", "integration"],
+      patterns: [
+        /\btests?\b/gi, /\bspec\b/gi, /\bcoverage\b/gi, /\bmocks?\b/gi, /\bstubs?\b/gi,
+        /\bassert(?:ions?)?\b/gi, /\bexpect\b/gi, /\bjest\b/gi, /\bvitest\b/gi,
+        /\bpytest\b/gi, /\bunit\s*tests?\b/gi, /\bintegration\b/gi
+      ],
       weight: 0,
     },
   ];
 
-  // Count pattern matches
-  for (const tp of typePatterns) {
+  // Count pattern matches (clone to avoid mutation)
+  const scored = typePatterns.map((tp) => {
+    let weight = 0;
     for (const pattern of tp.patterns) {
-      const regex = new RegExp(pattern, "gi");
-      const matches = contentLower.match(regex);
-      tp.weight += matches ? matches.length : 0;
+      const matches = contentLower.match(pattern);
+      weight += matches ? matches.length : 0;
     }
-  }
+    return { type: tp.type, weight };
+  });
 
-  // Sort by weight and get top match
-  typePatterns.sort((a, b) => b.weight - a.weight);
+  // Sort by weight descending, then by type name for deterministic tie-breaking
+  scored.sort((a, b) => b.weight - a.weight || a.type.localeCompare(b.type));
 
   // Only use detected type if weight is significant (>2 matches)
-  if (typePatterns[0].weight > 2) {
-    return typePatterns[0].type;
+  if (scored[0].weight > 2) {
+    return scored[0].type;
   }
 
   return "general";
 }
 
+// File size limit (5MB)
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 function findMostRecentPlan(filePath?: string): string {
   if (filePath) {
     const fullPath = resolve(filePath);
+    let stats;
     try {
-      statSync(fullPath);
-      return fullPath;
+      stats = statSync(fullPath);
     } catch {
       console.error(`File not found: ${filePath}`);
       process.exit(1);
     }
+
+    if (stats.size === 0) {
+      console.error(`File is empty: ${filePath}`);
+      process.exit(1);
+    }
+    if (stats.size > MAX_FILE_SIZE) {
+      console.error(`File exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit: ${filePath}`);
+      process.exit(1);
+    }
+
+    return fullPath;
   }
 
-  const plansDir = resolve(process.env.HOME || ".", ".claude", "plans");
-  const queueFile = resolve(process.env.HOME || ".", ".claude", "queue.md");
+  const home = process.env.HOME;
+  if (!home) {
+    console.error("HOME environment variable is not set");
+    process.exit(1);
+  }
 
-  let files: string[] = [];
+  const plansDir = resolve(home, ".claude", "plans");
+  const queueFile = resolve(home, ".claude", "queue.md");
+
+  let files: Array<{ path: string; mtime: number }> = [];
 
   try {
     const planFiles = readdirSync(plansDir)
       .filter((f) => f.endsWith(".md"))
-      .map((f) => resolve(plansDir, f));
+      .map((f) => {
+        const fullPath = resolve(plansDir, f);
+        return { path: fullPath, mtime: statSync(fullPath).mtime.getTime() };
+      });
     files = [...files, ...planFiles];
   } catch {
     // Plans directory doesn't exist
   }
 
   try {
-    statSync(queueFile);
-    files.push(queueFile);
+    const queueStats = statSync(queueFile);
+    files.push({ path: queueFile, mtime: queueStats.mtime.getTime() });
   } catch {
     // Queue file doesn't exist
   }
@@ -233,22 +304,69 @@ function findMostRecentPlan(filePath?: string): string {
     process.exit(1);
   }
 
-  const mostRecent = files.reduce((latest, current) => {
-    const latestTime = statSync(latest).mtime.getTime();
-    const currentTime = statSync(current).mtime.getTime();
-    return currentTime > latestTime ? current : latest;
-  });
-
-  return mostRecent;
+  // Sort by mtime descending and return most recent
+  files.sort((a, b) => b.mtime - a.mtime);
+  return files[0].path;
 }
 
 function readFileContent(filePath: string): string {
   try {
-    return readFileSync(filePath, "utf-8");
+    const content = readFileSync(filePath, "utf-8");
+    if (!content.trim()) {
+      console.error(`File is empty or contains only whitespace: ${filePath}`);
+      process.exit(1);
+    }
+    return content;
   } catch (error) {
     console.error(`Failed to read file: ${filePath}`);
     process.exit(1);
   }
+}
+
+// Execute copilot via spawn (no shell) with stdin for prompt
+async function runCopilot(
+  modelId: string,
+  prompt: string,
+  timeoutMs: number = 300000
+): Promise<{ stdout: string; stderr: string; timedOut: boolean }> {
+  return new Promise((resolve) => {
+    const args = ["--model", modelId, "--silent", "-p", prompt];
+    const proc = spawn("copilot", args, {
+      stdio: ["pipe", "pipe", "pipe"],
+      timeout: timeoutMs,
+    });
+
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      proc.kill("SIGTERM");
+    }, timeoutMs);
+
+    proc.on("close", (code, signal) => {
+      clearTimeout(timer);
+      if (signal === "SIGTERM" && timedOut) {
+        resolve({ stdout, stderr, timedOut: true });
+      } else {
+        resolve({ stdout, stderr, timedOut: false });
+      }
+    });
+
+    proc.on("error", (err) => {
+      clearTimeout(timer);
+      resolve({ stdout: "", stderr: err.message, timedOut: false });
+    });
+  });
 }
 
 async function reviewWithModel(
@@ -283,17 +401,27 @@ Be concise but thorough. Prioritize actionable feedback over generic advice.`;
   let tmpDir: string | null = null;
 
   try {
+    // Create temp dir for any intermediate files (future use)
     tmpDir = mkdtempSync(join(tmpdir(), "copilot-review-"));
-    const promptFile = join(tmpDir, "prompt.txt");
+    tempDirsToCleanup.add(tmpDir);
 
-    writeFileSync(promptFile, reviewPrompt, { mode: 0o600 });
+    const { stdout, stderr, timedOut } = await runCopilot(modelId, reviewPrompt, 300000);
 
-    const cmd = `copilot --model ${modelId} --silent -p "$(cat ${promptFile})"`;
-    const { stdout } = await execAsync(cmd, {
-      encoding: "utf-8",
-      maxBuffer: 10 * 1024 * 1024,
-      timeout: 300000,
-    });
+    if (timedOut) {
+      return {
+        model: model.name,
+        result: "",
+        error: `Review timed out after 300 seconds`,
+      };
+    }
+
+    if (!stdout.trim() && stderr) {
+      return {
+        model: model.name,
+        result: "",
+        error: `Review failed: ${stderr.slice(0, 500)}`,
+      };
+    }
 
     return { model: model.name, result: stdout, error: undefined };
   } catch (error) {
@@ -307,6 +435,7 @@ Be concise but thorough. Prioritize actionable feedback over generic advice.`;
     if (tmpDir) {
       try {
         rmSync(tmpDir, { recursive: true, force: true });
+        tempDirsToCleanup.delete(tmpDir);
       } catch {
         // Silently ignore cleanup errors
       }
@@ -323,13 +452,19 @@ function parseArgs(): { filePath?: string; reviewType?: ReviewType } {
     const arg = args[i];
 
     if (arg === "--type" || arg === "-t") {
-      const typeArg = args[++i]?.toLowerCase();
-      if (typeArg && typeArg in REVIEW_TYPE_MODELS) {
-        reviewType = typeArg as ReviewType;
-      } else {
-        console.error(`Invalid review type. Available: ${Object.keys(REVIEW_TYPE_MODELS).join(", ")}`);
+      // Bounds check before consuming next argument
+      if (i + 1 >= args.length) {
+        console.error(`Error: ${arg} requires a value`);
+        console.error(`Available types: ${Object.keys(REVIEW_TYPE_MODELS).join(", ")}`);
         process.exit(1);
       }
+      const typeArg = args[++i].toLowerCase();
+      if (!(typeArg in REVIEW_TYPE_MODELS)) {
+        console.error(`Invalid review type: ${typeArg}`);
+        console.error(`Available types: ${Object.keys(REVIEW_TYPE_MODELS).join(", ")}`);
+        process.exit(1);
+      }
+      reviewType = typeArg as ReviewType;
     } else if (arg === "--help" || arg === "-h") {
       console.log(`
 AI Peer Review - Smart multi-model code review
@@ -353,6 +488,10 @@ Examples:
       process.exit(0);
     } else if (!arg.startsWith("-")) {
       filePath = arg;
+    } else {
+      console.error(`Unknown option: ${arg}`);
+      console.error("Use --help for usage information");
+      process.exit(1);
     }
   }
 
@@ -380,10 +519,26 @@ async function main(): Promise<void> {
   console.log(`🤖 Models: ${models.map((m) => ALL_MODELS[m].name).join(" → ")}`);
   console.log(`\n⚡ Starting parallel peer review across ${models.length} AI models...\n`);
 
-  // Run reviews in parallel
-  const reviews = await Promise.all(
+  // Run reviews in parallel using allSettled to collect all results
+  const results = await Promise.allSettled(
     models.map((modelId) => reviewWithModel(modelId, content, reviewType))
   );
+
+  // Process results
+  const reviews = results.map((result, idx) => {
+    if (result.status === "fulfilled") {
+      return result.value;
+    } else {
+      return {
+        model: ALL_MODELS[models[idx]].name,
+        result: "",
+        error: `Promise rejected: ${result.reason}`,
+      };
+    }
+  });
+
+  // Track failures for exit code
+  let failureCount = 0;
 
   // Display results
   for (const review of reviews) {
@@ -393,6 +548,7 @@ async function main(): Promise<void> {
 
     if (review.error) {
       console.error(`❌ ${review.error}`);
+      failureCount++;
     } else {
       console.log(review.result);
     }
@@ -401,11 +557,26 @@ async function main(): Promise<void> {
   const duration = ((Date.now() - startTime) / 1000).toFixed(1);
 
   console.log(`\n${"═".repeat(70)}`);
-  console.log(`✅ ${reviewType.toUpperCase()} peer review complete! (${duration}s)`);
+  if (failureCount === reviews.length) {
+    console.log(`❌ All ${failureCount} reviews failed! (${duration}s)`);
+  } else if (failureCount > 0) {
+    console.log(`⚠️  ${reviewType.toUpperCase()} peer review complete with ${failureCount} failure(s)! (${duration}s)`);
+  } else {
+    console.log(`✅ ${reviewType.toUpperCase()} peer review complete! (${duration}s)`);
+  }
   console.log(`${"═".repeat(70)}\n`);
+
+  // Exit with appropriate code
+  if (failureCount === reviews.length) {
+    process.exit(1); // All failed
+  } else if (failureCount > 0) {
+    process.exit(2); // Partial failure
+  }
+  // Exit 0 for success (implicit)
 }
 
 main().catch((error) => {
   console.error("Fatal error:", error);
+  cleanupTempDirs();
   process.exit(1);
 });
