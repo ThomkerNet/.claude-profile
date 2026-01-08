@@ -1,6 +1,6 @@
 ---
 name: profile-reference
-description: Reference documentation for Claude profile features (MCP servers, router, Telegram, queue, statusline). Load when you need detailed usage info for these systems.
+description: Reference documentation for Claude profile features (MCP servers, router, Telegram, statusline). Load when you need detailed usage info for these systems.
 ---
 
 # Profile Reference Documentation
@@ -192,34 +192,6 @@ ccr code --dangerously-skip-permissions
 /router                         # Check status
 ccr ui                          # Config UI
 ccr restart                     # Restart after config changes
-```
-
----
-
-## Task Queue Reference
-
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `/q <task>` | Defer for later |
-| `/qa <task>` | Add to current work |
-| `/qq` | Show pending |
-| `/qn [id]` | Start next/specific |
-| `/qrm <id>` | Remove task |
-| `/qc` | Clear completed |
-| `/ctx <info>` | Add context (not task) |
-
-### File Format
-
-`.claude/queue.md`:
-```markdown
-## Pending
-- [ ] #1 refactor auth
-- [ ] #3 add tests
-
-## Completed
-- [x] #2 fix bug (done 2025-01-15)
 ```
 
 ---

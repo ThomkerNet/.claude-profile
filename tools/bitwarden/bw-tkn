@@ -12,25 +12,118 @@ readonly BW_DATA_DIR="$HOME/.config/bitwarden-cli/tkn"
 readonly BW_SERVER_URL="https://vaultwarden.thomker.net"
 readonly BW_EMAIL="simonbarker@gmail.com"
 
+# Cleanup function for signals and exit
+_cleanup_vars=""
+cleanup() {
+    # Remove temp files
+    if [[ -n "${_cleanup_vars:-}" ]]; then
+        rm -rf "$_cleanup_vars" 2>/dev/null || true
+    fi
+}
+trap cleanup EXIT INT TERM
+
+# Verify bw CLI is available
+if ! command -v bw >/dev/null 2>&1; then
+    echo "Error: bw CLI not found in PATH" >&2
+    exit 127
+fi
+
 # Ensure data directory exists
-mkdir -p "$BW_DATA_DIR"
+if ! mkdir -p "$BW_DATA_DIR" 2>/dev/null; then
+    echo "Error: Cannot create data directory: $BW_DATA_DIR" >&2
+    exit 1
+fi
 
 # Export env vars for bw CLI (isolates from other vaults)
 export BITWARDENCLI_APPDATA_DIR="$BW_DATA_DIR"
 
 # Ensure server is configured in this data dir (first run only)
-if [[ ! -f "$BW_DATA_DIR/data.json" ]] || ! grep -q "$BW_SERVER_URL" "$BW_DATA_DIR/data.json" 2>/dev/null; then
-    bw config server "$BW_SERVER_URL" >/dev/null 2>&1 || true
+if [[ ! -f "$BW_DATA_DIR/data.json" ]] || ! grep -qF "$BW_SERVER_URL" "$BW_DATA_DIR/data.json" 2>/dev/null; then
+    if ! bw config server "$BW_SERVER_URL" >/dev/null 2>&1; then
+        echo "Error: Failed to configure server URL: $BW_SERVER_URL" >&2
+        exit 1
+    fi
 fi
+
+# Helper: check if argument is in list
+has_arg() {
+    local needle="$1"
+    shift
+    for arg in "$@"; do
+        [[ "$arg" == "$needle" ]] && return 0
+    done
+    return 1
+}
 
 # Handle login specially to pre-fill email
 if [[ "${1:-}" == "login" ]]; then
     shift
-    if [[ "$*" != *"@"* ]]; then
-        exec bw login "$BW_EMAIL" "$@"
-    else
+    # Only pre-fill email if no email-like argument provided
+    has_email=false
+    for arg in "$@"; do
+        [[ "$arg" =~ ^[^@]+@[^@]+\.[^@]+$ ]] && has_email=true && break
+    done
+    if $has_email; then
         exec bw login "$@"
+    else
+        exec bw login "$BW_EMAIL" "$@"
     fi
+
+# Handle unlock --raw specially to fix TTY issues with redirection
+elif [[ "${1:-}" == "unlock" ]] && has_arg "--raw" "$@"; then
+    # Verify TTY is available and accessible for password input
+    if [[ ! -r /dev/tty ]] || [[ ! -w /dev/tty ]]; then
+        echo "Error: /dev/tty not accessible. Run from an interactive terminal." >&2
+        exit 1
+    fi
+
+    # Read password directly from terminal (not stdin which may be redirected)
+    printf "Master password: " >/dev/tty
+    IFS= read -rs password </dev/tty
+    printf '\n' >/dev/tty
+
+    # Validate password was entered
+    if [[ -z "$password" ]]; then
+        echo "Error: No password entered" >&2
+        exit 1
+    fi
+
+    # Create secure temp directory for password file
+    # Using directory ensures we control permissions completely
+    tmpdir=$(mktemp -d)
+    chmod 700 "$tmpdir"
+    _cleanup_vars="$tmpdir"
+
+    tmpfile="$tmpdir/pw"
+
+    # Write password to file (no newline)
+    printf '%s' "$password" > "$tmpfile"
+    chmod 600 "$tmpfile"
+
+    # Clear password from shell variable immediately
+    password=""
+
+    # Run unlock with passwordfile
+    output=$(bw unlock --passwordfile "$tmpfile" --raw 2>&1) || {
+        exit_code=$?
+        echo "Unlock failed: $output" >&2
+        exit $exit_code
+    }
+
+    # Overwrite file before deletion (defense in depth)
+    if [[ -f "$tmpfile" ]]; then
+        dd if=/dev/zero of="$tmpfile" bs=1 count=100 2>/dev/null || true
+    fi
+
+    # Validate session token format (base64 or URL-safe base64, 80+ chars)
+    if [[ ! "$output" =~ ^[A-Za-z0-9+/=_-]{80,}$ ]]; then
+        echo "Error: Invalid session token format received" >&2
+        exit 1
+    fi
+
+    # Output session key
+    echo "$output"
+
 else
     exec bw "$@"
 fi

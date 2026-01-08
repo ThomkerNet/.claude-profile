@@ -38,7 +38,7 @@
       "command": "npx -y firecrawl-mcp",
       "description": "Web scraping and search",
       "env": {
-        "FIRECRAWL_API_KEY": "fc-d80156617fa04c8ebd0dc29d6111b0d9"
+        "FIRECRAWL_API_KEY": "{{FIRECRAWL_API_KEY}}"
       }
     },
     {
