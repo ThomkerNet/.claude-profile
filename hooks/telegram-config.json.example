@@ -1,7 +1,0 @@
-{
-  "bot_token": "YOUR_BOT_TOKEN_HERE",
-  "chat_id": "YOUR_CHAT_ID_HERE",
-  "notify_on_tools": ["Bash", "Write", "Edit"],
-  "update_interval_minutes": 30,
-  "idle_threshold_seconds": 180
-}

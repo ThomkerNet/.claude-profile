@@ -1,6 +1,6 @@
 ---
 name: profile-reference
-description: Reference documentation for Claude profile features (MCP servers, router, Telegram, statusline). Load when you need detailed usage info for these systems.
+description: Reference documentation for Claude profile features (MCP servers, router, statusline). Load when you need detailed usage info for these systems.
 ---
 
 # Profile Reference Documentation
@@ -63,41 +63,6 @@ When consulting multiple models, dispatch in parallel:
 <invoke name="Bash">copilot --model gemini-3-pro-preview -p "..."</invoke>
 </function_calls>
 ```
-
----
-
-## Telegram Integration
-
-### Setup
-
-1. Message @BotFather → `/newbot` → save token
-2. Message bot, visit `https://api.telegram.org/bot<TOKEN>/getUpdates` → get chat ID
-3. Configure: `bun run ~/.claude/hooks/telegram-bun/index.ts config <TOKEN> <CHAT_ID>`
-4. Start listener: `bun run ~/.claude/hooks/telegram-bun/index.ts listen`
-
-### API Usage
-
-```typescript
-import { requestApproval } from "~/.claude/hooks/telegram-bun/src/approval";
-
-const result = await requestApproval({
-  title: "Confirm Action",
-  message: "Proceed with deployment?",
-  options: [
-    { label: "Yes", value: "yes" },
-    { label: "No", value: "no" }
-  ],
-  timeout: 60000
-});
-```
-
-### Bot Commands
-
-| Command | Description |
-|---------|-------------|
-| `/ping` | Check if alive |
-| `/status` | Show status |
-| `/help` | Show help |
 
 ---
 
