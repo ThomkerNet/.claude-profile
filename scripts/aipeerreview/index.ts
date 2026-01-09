@@ -11,9 +11,9 @@
  * - GPT-5.1: Visual reasoning (85.4% MMMU), general reasoning
  */
 
-import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync, rmSync } from "fs";
-import { resolve, basename, join } from "path";
-import { spawn } from "child_process";
+import { readFileSync, readdirSync, statSync, writeFileSync, mkdtempSync, rmSync, existsSync } from "fs";
+import { resolve, basename, join, relative, extname } from "path";
+import { spawn, execSync } from "child_process";
 import { tmpdir } from "os";
 
 // Track temp directories for cleanup on signals
@@ -243,10 +243,106 @@ function detectReviewType(content: string): ReviewType {
   return "general";
 }
 
-// File size limit (5MB)
+// File size limit (5MB per file, 20MB total for multi-file)
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_TOTAL_SIZE = 20 * 1024 * 1024;
+const MAX_FILES = 15;
 
-function findMostRecentPlan(filePath?: string): string {
+// Reviewable file extensions
+const REVIEWABLE_EXTENSIONS = [
+  '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
+  '.py', '.go', '.rs', '.java', '.kt', '.swift',
+  '.c', '.cpp', '.h', '.hpp', '.cs',
+  '.rb', '.php', '.scala', '.clj',
+  '.yml', '.yaml', '.json', '.toml',
+  '.tf', '.hcl', '.bicep',
+  '.sh', '.bash', '.zsh', '.ps1',
+  '.sql', '.graphql', '.prisma',
+  '.md', '.mdx',
+  '.dockerfile', '.containerfile',
+];
+
+type ReviewMode = 'git' | 'plan' | 'file';
+
+// Get git repository root, or null if not in a git repo
+function getGitRoot(): string | null {
+  try {
+    return execSync('git rev-parse --show-toplevel 2>/dev/null', { encoding: 'utf-8' }).trim();
+  } catch {
+    return null;
+  }
+}
+
+// Get changed files from git (staged + unstaged)
+function getGitChangedFiles(): string[] {
+  const gitRoot = getGitRoot();
+  if (!gitRoot) return [];
+
+  try {
+    // Get unstaged changes (works even with no commits)
+    const unstaged = execSync('git diff --name-only 2>/dev/null', { encoding: 'utf-8' });
+    // Get staged changes
+    const staged = execSync('git diff --cached --name-only 2>/dev/null', { encoding: 'utf-8' });
+
+    const files = [...new Set([...unstaged.split('\n'), ...staged.split('\n')])]
+      .filter(f => f.trim()) // Remove empty strings FIRST
+      .filter(f => {
+        const ext = extname(f).toLowerCase();
+        const filename = basename(f).toLowerCase();
+        // Check extension or special filenames (Dockerfile, Makefile)
+        return REVIEWABLE_EXTENSIONS.includes(ext) ||
+               filename === 'dockerfile' ||
+               filename === 'makefile' ||
+               filename === 'containerfile';
+      })
+      .map(f => join(gitRoot, f)) // Resolve from git root
+      .filter(f => existsSync(f)) // Filter deleted files
+      .filter(f => {
+        try {
+          return statSync(f).size <= MAX_FILE_SIZE;
+        } catch {
+          return false;
+        }
+      });
+
+    return files;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unknown error';
+    console.warn(`⚠️  Git detection failed: ${msg}`);
+    return [];
+  }
+}
+
+// Find most recent plan from ~/.claude/plans/
+function findMostRecentPlan(): string | null {
+  const home = process.env.HOME;
+  if (!home) return null;
+
+  const plansDir = resolve(home, ".claude", "plans");
+  let files: Array<{ path: string; mtime: number }> = [];
+
+  try {
+    const planFiles = readdirSync(plansDir)
+      .filter((f) => f.endsWith(".md"))
+      .map((f) => {
+        const fullPath = resolve(plansDir, f);
+        return { path: fullPath, mtime: statSync(fullPath).mtime.getTime() };
+      });
+    files = [...files, ...planFiles];
+  } catch {
+    // Plans directory doesn't exist
+  }
+
+  if (files.length === 0) return null;
+
+  // Sort by mtime descending and return most recent
+  files.sort((a, b) => b.mtime - a.mtime);
+  return files[0].path;
+}
+
+// Main entry point for finding review targets
+function findReviewTarget(filePath?: string, mode?: ReviewMode): string[] {
+  // Explicit file path always wins
   if (filePath) {
     const fullPath = resolve(filePath);
     let stats;
@@ -266,47 +362,57 @@ function findMostRecentPlan(filePath?: string): string {
       process.exit(1);
     }
 
-    return fullPath;
+    return [fullPath];
   }
 
-  const home = process.env.HOME;
-  if (!home) {
-    console.error("HOME environment variable is not set");
-    process.exit(1);
+  // Mode: plan - force plans directory
+  if (mode === 'plan') {
+    const plan = findMostRecentPlan();
+    if (!plan) {
+      console.error("No plans found in ~/.claude/plans/");
+      process.exit(1);
+    }
+    return [plan];
   }
 
-  const plansDir = resolve(home, ".claude", "plans");
-  const queueFile = resolve(home, ".claude", "queue.md");
+  // Mode: git (default) - try git first, then fallback
+  const gitFiles = getGitChangedFiles();
+  if (gitFiles.length > 0) {
+    // Apply limits
+    let totalSize = 0;
+    const limitedFiles = gitFiles.slice(0, MAX_FILES).filter(f => {
+      try {
+        const size = statSync(f).size;
+        if (totalSize + size > MAX_TOTAL_SIZE) return false;
+        totalSize += size;
+        return true;
+      } catch {
+        return false;
+      }
+    });
 
-  let files: Array<{ path: string; mtime: number }> = [];
-
-  try {
-    const planFiles = readdirSync(plansDir)
-      .filter((f) => f.endsWith(".md"))
-      .map((f) => {
-        const fullPath = resolve(plansDir, f);
-        return { path: fullPath, mtime: statSync(fullPath).mtime.getTime() };
+    if (limitedFiles.length > 0) {
+      const gitRoot = getGitRoot();
+      console.log(`📂 Auto-detected ${limitedFiles.length} changed file(s) from git:`);
+      limitedFiles.forEach(f => {
+        const relPath = gitRoot ? relative(gitRoot, f) : basename(f);
+        console.log(`   • ${relPath}`);
       });
-    files = [...files, ...planFiles];
-  } catch {
-    // Plans directory doesn't exist
+      if (gitFiles.length > limitedFiles.length) {
+        console.log(`   (${gitFiles.length - limitedFiles.length} files skipped due to size limits)`);
+      }
+      return limitedFiles;
+    }
   }
 
-  try {
-    const queueStats = statSync(queueFile);
-    files.push({ path: queueFile, mtime: queueStats.mtime.getTime() });
-  } catch {
-    // Queue file doesn't exist
-  }
-
-  if (files.length === 0) {
-    console.error("No plans or issues found. Create a plan first or specify a file path.");
+  // Fallback to plans
+  console.log("⚠️  No git changes detected, falling back to plans directory...");
+  const plan = findMostRecentPlan();
+  if (!plan) {
+    console.error("No files to review. Make changes in a git repo or create a plan in ~/.claude/plans/");
     process.exit(1);
   }
-
-  // Sort by mtime descending and return most recent
-  files.sort((a, b) => b.mtime - a.mtime);
-  return files[0].path;
+  return [plan];
 }
 
 function readFileContent(filePath: string): string {
@@ -443,10 +549,11 @@ Be concise but thorough. Prioritize actionable feedback over generic advice.`;
   }
 }
 
-function parseArgs(): { filePath?: string; reviewType?: ReviewType } {
+function parseArgs(): { filePath?: string; reviewType?: ReviewType; mode?: ReviewMode } {
   const args = process.argv.slice(2);
   let filePath: string | undefined;
   let reviewType: ReviewType | undefined;
+  let mode: ReviewMode | undefined;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -465,6 +572,19 @@ function parseArgs(): { filePath?: string; reviewType?: ReviewType } {
         process.exit(1);
       }
       reviewType = typeArg as ReviewType;
+    } else if (arg === "--mode" || arg === "-m") {
+      // Bounds check before consuming next argument
+      if (i + 1 >= args.length) {
+        console.error(`Error: ${arg} requires a value (git, plan)`);
+        process.exit(1);
+      }
+      const modeArg = args[++i].toLowerCase();
+      if (!['git', 'plan'].includes(modeArg)) {
+        console.error(`Invalid mode: ${modeArg}`);
+        console.error("Available modes: git, plan");
+        process.exit(1);
+      }
+      mode = modeArg as ReviewMode;
     } else if (arg === "--help" || arg === "-h") {
       console.log(`
 AI Peer Review - Smart multi-model code review
@@ -473,7 +593,14 @@ Usage: /aipeerreview [options] [file]
 
 Options:
   -t, --type <type>  Review type: ${Object.keys(REVIEW_TYPE_MODELS).join(", ")}
+  -m, --mode <mode>  File selection: git (default), plan
   -h, --help         Show this help
+
+File Selection:
+  (default)          Auto-detect git changes, fallback to plans
+  --mode git         Review git changes in current repo
+  --mode plan        Review most recent file in ~/.claude/plans/
+  <file>             Review specific file (overrides mode)
 
 Review Types & Models:
 ${Object.entries(REVIEW_TYPE_MODELS)
@@ -481,9 +608,10 @@ ${Object.entries(REVIEW_TYPE_MODELS)
   .join("\n")}
 
 Examples:
-  /aipeerreview                          # Auto-detect type, review recent plan
-  /aipeerreview -t security auth.ts      # Security review of auth.ts
-  /aipeerreview --type performance       # Performance review of recent plan
+  /aipeerreview                          # Review git changes (or fallback to plans)
+  /aipeerreview -t security              # Security review of git changes
+  /aipeerreview --mode plan              # Review most recent plan
+  /aipeerreview src/auth.ts              # Review specific file
 `);
       process.exit(0);
     } else if (!arg.startsWith("-")) {
@@ -495,14 +623,47 @@ Examples:
     }
   }
 
-  return { filePath, reviewType };
+  return { filePath, reviewType, mode };
+}
+
+// Get language identifier for markdown code blocks
+function getLanguageFromExt(filePath: string): string {
+  const ext = extname(filePath).toLowerCase();
+  const langMap: Record<string, string> = {
+    '.ts': 'typescript', '.tsx': 'tsx', '.js': 'javascript', '.jsx': 'jsx',
+    '.py': 'python', '.go': 'go', '.rs': 'rust', '.java': 'java',
+    '.kt': 'kotlin', '.swift': 'swift', '.c': 'c', '.cpp': 'cpp',
+    '.cs': 'csharp', '.rb': 'ruby', '.php': 'php', '.scala': 'scala',
+    '.yml': 'yaml', '.yaml': 'yaml', '.json': 'json', '.toml': 'toml',
+    '.tf': 'hcl', '.hcl': 'hcl', '.bicep': 'bicep',
+    '.sh': 'bash', '.bash': 'bash', '.zsh': 'zsh', '.ps1': 'powershell',
+    '.sql': 'sql', '.graphql': 'graphql', '.prisma': 'prisma',
+    '.md': 'markdown', '.mdx': 'mdx',
+  };
+  return langMap[ext] || 'text';
 }
 
 async function main(): Promise<void> {
-  const { filePath, reviewType: explicitType } = parseArgs();
-  const documentPath = findMostRecentPlan(filePath);
-  const fileName = basename(documentPath);
-  const content = readFileContent(documentPath);
+  const { filePath, reviewType: explicitType, mode } = parseArgs();
+  const targetFiles = findReviewTarget(filePath, mode);
+  const gitRoot = getGitRoot();
+
+  // Build content from all files
+  let content: string;
+  let displayName: string;
+
+  if (targetFiles.length === 1) {
+    displayName = basename(targetFiles[0]);
+    content = readFileContent(targetFiles[0]);
+  } else {
+    displayName = `${targetFiles.length} files`;
+    content = targetFiles.map(f => {
+      const relPath = gitRoot ? relative(gitRoot, f) : basename(f);
+      const lang = getLanguageFromExt(f);
+      const fileContent = readFileContent(f);
+      return `## File: ${relPath}\n\n\`\`\`${lang}\n${fileContent}\n\`\`\``;
+    }).join('\n\n---\n\n');
+  }
 
   // Detect or use explicit review type
   const reviewType = explicitType || detectReviewType(content);
@@ -514,7 +675,7 @@ async function main(): Promise<void> {
   console.log(`\n${"═".repeat(70)}`);
   console.log(`   AI PEER REVIEW - ${reviewType.toUpperCase()} Analysis`);
   console.log(`${"═".repeat(70)}\n`);
-  console.log(`📄 Document: ${fileName}`);
+  console.log(`📄 Document: ${displayName}`);
   console.log(`🎯 Review Type: ${reviewType}${explicitType ? " (explicit)" : " (auto-detected)"}`);
   console.log(`🤖 Models: ${models.map((m) => ALL_MODELS[m].name).join(" → ")}`);
   console.log(`\n⚡ Starting parallel peer review across ${models.length} AI models...\n`);
