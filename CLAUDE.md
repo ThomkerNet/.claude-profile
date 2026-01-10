@@ -74,7 +74,7 @@ gh auth switch --user <ample-engineer|boroughnexus-cto>
 | Item | Value |
 |------|-------|
 | Profile repo | `~/.claude-profile/` (git) → `~/.claude/` (symlinks) |
-| Obsidian vault | `~/Obsidian/Simon-Personal/` (direct file ops, no MCP) |
+| Obsidian vault | `~/Documents/SBarker-Vault/` (direct file ops, no MCP) |
 | Homelab docs | `~/git-bnx/TKN/TKNet-Homelab-Docs/` |
 | "ppp" | Puppeteer |
 | Prefer | Firecrawl over WebFetch |

@@ -3,5 +3,18 @@
   "statusLine": {
     "type": "command",
     "command": "/Users/sbarker/.claude/statuslines/statusline.sh"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/sbarker/.claude/hooks/block-ask-user-question.py"
+          }
+        ]
+      }
+    ]
   }
 }

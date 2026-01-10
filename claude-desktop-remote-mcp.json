@@ -8,26 +8,6 @@
     "4. Merge this into Claude Desktop config (~/Library/Application Support/Claude/claude_desktop_config.json)"
   ],
   "mcpServers": {
-    "BNX_BNX-Docs-Architecture": {
-      "command": "ssh",
-      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-Docs-Architecture"]
-    },
-    "BNX_BNX-Docs-Business": {
-      "command": "ssh",
-      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-Docs-Business"]
-    },
-    "BNX_BNX-TFAzure-SharedServices": {
-      "command": "ssh",
-      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-TFAzure-SharedServices"]
-    },
-    "BNX_BNX-Web": {
-      "command": "ssh",
-      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BNX-Web"]
-    },
-    "BNX_BriefHours-App": {
-      "command": "ssh",
-      "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BNX_BriefHours-App"]
-    },
     "BriefHours_BNX-Web": {
       "command": "ssh",
       "args": ["-T", "sbarker@bnx-macmini-1", "~/.local/bin/remote-mcp-manager.sh connect BriefHours_BNX-Web"]
