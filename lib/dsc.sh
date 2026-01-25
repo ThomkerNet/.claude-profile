@@ -522,6 +522,35 @@ ensure_launchd_service() {
     return 1
 }
 
+# ensure_user_linger
+# Enables loginctl linger for current user (required for user services to run after logout)
+ensure_user_linger() {
+    if [ "$DSC_PLATFORM" != "linux" ]; then
+        return 0
+    fi
+
+    local uid=$(id -u)
+
+    # Check if linger is already enabled
+    if [ -f "/var/lib/systemd/linger/$USER" ] || \
+       loginctl show-user "$USER" 2>/dev/null | grep -q "Linger=yes"; then
+        dsc_unchanged "systemd:linger (enabled for $USER)"
+        return 0
+    fi
+
+    # Try to enable linger
+    if loginctl enable-linger "$USER" 2>/dev/null; then
+        dsc_changed "systemd:linger (enabled for $USER)"
+        return 0
+    elif sudo loginctl enable-linger "$USER" 2>/dev/null; then
+        dsc_changed "systemd:linger (enabled for $USER via sudo)"
+        return 0
+    fi
+
+    dsc_info "systemd:linger - enable manually: loginctl enable-linger $USER"
+    return 1
+}
+
 ensure_systemd_service() {
     local name=$1
     local source=$2

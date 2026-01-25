@@ -7,7 +7,7 @@ A portable, self-contained Claude Code configuration that works on Windows, macO
 ## Features
 
 - **Telegram Integration** - Remote control Claude via Telegram with two-way communication
-- **MCP Servers** - Pre-configured Context7, Puppeteer, Firecrawl, Sequential Thinking
+- **MCP Servers** - Pre-configured Context7, Puppeteer, Sequential Thinking
 - **Gemini Second Opinions** - Get alternative perspectives via Gemini CLI
 - **Custom Skills** - Solution review skill for comprehensive code audits
 - **Slash Commands** - `/telegram`, `/telegram-end`, `/review`, `/cname`

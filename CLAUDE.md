@@ -77,7 +77,6 @@ gh auth switch --user <ample-engineer|boroughnexus-cto>
 | Obsidian vault | `~/Documents/SBarker-Vault/` (direct file ops, no MCP) |
 | Homelab docs | `~/git-bnx/TKN/TKNet-Homelab-Docs/` |
 | "ppp" | Puppeteer |
-| Prefer | Firecrawl over WebFetch |
 
 ---
 

@@ -1,0 +1,20 @@
+[Unit]
+Description=Obsidian Vault Git Sync
+Documentation=https://github.com/ample-engineer/.claude
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash {{CLAUDE_HOME}}/services/obsidian-git-sync/sync.sh
+Environment="HOME={{HOME}}"
+Environment="OBSIDIAN_VAULT_PATH={{OBSIDIAN_VAULT_PATH}}"
+Environment="OBSIDIAN_SYNC_LOG={{CLAUDE_HOME}}/logs/obsidian-sync.log"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:%h/.local/bin"
+Nice=10
+IOSchedulingClass=idle
+StandardOutput=append:{{CLAUDE_HOME}}/logs/obsidian-sync-stdout.log
+StandardError=append:{{CLAUDE_HOME}}/logs/obsidian-sync-stderr.log
+
+[Install]
+WantedBy=default.target

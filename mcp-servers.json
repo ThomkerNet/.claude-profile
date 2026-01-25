@@ -23,14 +23,6 @@
       }
     },
     {
-      "name": "firecrawl",
-      "command": "npx -y firecrawl-mcp",
-      "description": "Web scraping and search",
-      "env": {
-        "FIRECRAWL_API_KEY": "fc-e067bd92b4594e7b9554270e1056612d"
-      }
-    },
-    {
       "name": "sequential-thinking",
       "command": "npx -y @modelcontextprotocol/server-sequential-thinking",
       "description": "Step-by-step problem solving"

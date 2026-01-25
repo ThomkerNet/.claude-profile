@@ -20,6 +20,40 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 CLAUDE_HOME="$HOME/.claude"
 
+# Parse command line arguments
+OBSIDIAN_VAULT_PATH=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --obsidian-vault)
+            OBSIDIAN_VAULT_PATH="$2"
+            shift 2
+            ;;
+        --no-obsidian)
+            OBSIDIAN_VAULT_PATH="SKIP"
+            shift
+            ;;
+        --help|-h)
+            echo "Usage: ./setup.sh [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  --obsidian-vault PATH   Override Obsidian vault path (default: from secrets.json)"
+            echo "  --no-obsidian           Skip Obsidian git sync setup"
+            echo "  --help, -h              Show this help message"
+            exit 0
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+# Load Obsidian vault path from secrets.json if not specified
+if [ -z "$OBSIDIAN_VAULT_PATH" ] && [ -f "$REPO_DIR/secrets.json" ] && command -v jq &>/dev/null; then
+    OBSIDIAN_VAULT_PATH=$(jq -r '.obsidian.vault_path // empty' "$REPO_DIR/secrets.json")
+    # Expand ~ to $HOME
+    OBSIDIAN_VAULT_PATH="${OBSIDIAN_VAULT_PATH/#\~/$HOME}"
+fi
+
 # Source DSC library
 if [ -f "$REPO_DIR/lib/dsc.sh" ]; then
     source "$REPO_DIR/lib/dsc.sh"
@@ -240,6 +274,33 @@ if command -v bw &>/dev/null || [ -f "$HOME/.npm-global/bin/bw" ]; then
     fi
 fi
 
+# Git-LFS (for Obsidian vault binary files)
+if command -v git-lfs &>/dev/null; then
+    dsc_unchanged "brew:git-lfs"
+else
+    if [ "$DSC_PLATFORM" = "mac" ] && command -v brew &>/dev/null; then
+        echo -e "  ${_BLUE}Installing git-lfs...${_NC}"
+        if dsc_run_brew install git-lfs &>/dev/null; then
+            git lfs install &>/dev/null
+            dsc_changed "brew:git-lfs (installed)"
+        else
+            dsc_failed "brew:git-lfs"
+        fi
+    elif [ "$DSC_PLATFORM" = "linux" ]; then
+        # Try package manager
+        if [ "$DSC_PKG_MANAGER" = "apt" ]; then
+            if sudo apt-get install -y git-lfs &>/dev/null; then
+                git lfs install &>/dev/null
+                dsc_changed "apt:git-lfs (installed)"
+            else
+                dsc_failed "apt:git-lfs"
+            fi
+        else
+            dsc_skipped "git-lfs (manual install needed)"
+        fi
+    fi
+fi
+
 # Glances (system monitoring)
 if [ "$DSC_PLATFORM" = "mac" ]; then
     if command -v glances &>/dev/null; then
@@ -281,6 +342,7 @@ ensure_symlink "$REPO_DIR/lib" "$CLAUDE_HOME/lib" "lib/"
 ensure_symlink "$REPO_DIR/output" "$CLAUDE_HOME/output" "output/"
 ensure_symlink "$REPO_DIR/plugins" "$CLAUDE_HOME/plugins" "plugins/"
 ensure_symlink "$REPO_DIR/docs" "$CLAUDE_HOME/docs" "docs/"
+ensure_symlink "$REPO_DIR/configs" "$CLAUDE_HOME/configs" "configs/"
 ensure_symlink "$REPO_DIR/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md" "CLAUDE.md"
 
 # ============================================================================
@@ -403,6 +465,9 @@ if [ "$DSC_PLATFORM" = "mac" ]; then
 elif [ "$DSC_PLATFORM" = "linux" ]; then
     ensure_directory "$HOME/.config/systemd/user"
 
+    # Enable linger for user services to run after logout
+    ensure_user_linger
+
     # Glances monitoring timer
     if [ -f "$REPO_DIR/services/glances.service" ] && [ -f "$REPO_DIR/services/glances.timer" ]; then
         ensure_file_template "$REPO_DIR/services/glances.service" "$HOME/.config/systemd/user/glances.service" \
@@ -426,6 +491,244 @@ elif [ "$DSC_PLATFORM" = "linux" ]; then
     chmod +x "$REPO_DIR/services/spec-watcher/watcher.sh" 2>/dev/null || true
     ensure_directory "$CLAUDE_HOME/.spec-plans"
     dsc_unchanged "tools:spec-watcher (available)"
+fi
+
+# ============================================================================
+# Step 8b: Obsidian Git Sync (Optional)
+# ============================================================================
+
+if [ -n "$OBSIDIAN_VAULT_PATH" ] && [ "$OBSIDIAN_VAULT_PATH" != "SKIP" ]; then
+    echo ""
+    echo "── Step 8b: Obsidian Git Sync ──"
+
+    if [ ! -d "$OBSIDIAN_VAULT_PATH" ]; then
+        dsc_failed "obsidian-vault (directory not found: $OBSIDIAN_VAULT_PATH)"
+    else
+        # Load credentials from secrets.json and PAT from Bitwarden
+        OBSIDIAN_GIT_REMOTE=""
+        if [ -f "$REPO_DIR/secrets.json" ] && command -v jq &>/dev/null; then
+            OBSIDIAN_REPO=$(jq -r '.obsidian.github_repo // empty' "$REPO_DIR/secrets.json")
+            OBSIDIAN_USER=$(jq -r '.obsidian.github_user // empty' "$REPO_DIR/secrets.json")
+            OBSIDIAN_BW_ITEM=$(jq -r '.obsidian.bitwarden_item // empty' "$REPO_DIR/secrets.json")
+
+            if [ -n "$OBSIDIAN_REPO" ] && [ -n "$OBSIDIAN_USER" ]; then
+                # Try to get PAT from Bitwarden
+                OBSIDIAN_PAT=""
+                BW_CMD=$(command -v bw || echo "$HOME/.npm-global/bin/bw")
+
+                if [ -x "$BW_CMD" ] && [ -n "$OBSIDIAN_BW_ITEM" ]; then
+                    # Check if Bitwarden is unlocked
+                    BW_STATUS=$($BW_CMD status 2>/dev/null | jq -r '.status // "unauthenticated"')
+
+                    if [ "$BW_STATUS" = "unlocked" ]; then
+                        OBSIDIAN_PAT=$($BW_CMD get password "$OBSIDIAN_BW_ITEM" 2>/dev/null)
+                        if [ -n "$OBSIDIAN_PAT" ]; then
+                            dsc_unchanged "config:obsidian-pat (from Bitwarden)"
+                        fi
+                    elif [ "$BW_STATUS" = "locked" ]; then
+                        echo ""
+                        echo -e "  ${_YELLOW}Bitwarden is locked. Unlock to configure Obsidian git sync:${_NC}"
+                        echo "    bw unlock"
+                        echo "    export BW_SESSION=<session>"
+                        echo ""
+                        read -p "  Press Enter after unlocking (or Enter to skip Obsidian setup): " -r
+
+                        # Check again after prompt
+                        BW_STATUS=$($BW_CMD status 2>/dev/null | jq -r '.status // "unauthenticated"')
+                        if [ "$BW_STATUS" = "unlocked" ]; then
+                            OBSIDIAN_PAT=$($BW_CMD get password "$OBSIDIAN_BW_ITEM" 2>/dev/null)
+                            if [ -n "$OBSIDIAN_PAT" ]; then
+                                dsc_changed "config:obsidian-pat (from Bitwarden)"
+                            fi
+                        fi
+                    else
+                        dsc_info "Bitwarden not logged in - run 'bw login' first for Obsidian setup"
+                    fi
+                fi
+
+                if [ -n "$OBSIDIAN_PAT" ]; then
+                    OBSIDIAN_GIT_REMOTE="https://${OBSIDIAN_USER}:${OBSIDIAN_PAT}@github.com/${OBSIDIAN_USER}/${OBSIDIAN_REPO}.git"
+                else
+                    dsc_skipped "config:obsidian-credentials (Bitwarden locked or PAT not found)"
+                fi
+            fi
+        fi
+
+        # Initialize git repo if needed
+        if [ ! -d "$OBSIDIAN_VAULT_PATH/.git" ]; then
+            if [ -z "$OBSIDIAN_GIT_REMOTE" ]; then
+                dsc_failed "obsidian-vault (not a git repo and no credentials in secrets.json)"
+                echo "  Add to secrets.json: { \"obsidian\": { \"github_user\": \"...\", \"github_repo\": \"...\", \"github_pat\": \"...\" } }"
+            else
+                echo -e "  ${_BLUE}Initializing Obsidian vault as git repo...${_NC}"
+                cd "$OBSIDIAN_VAULT_PATH"
+
+                # Initialize git and LFS
+                git init &>/dev/null
+                git lfs install &>/dev/null 2>&1 || true
+                dsc_changed "git:init (initialized)"
+
+                # Create .gitattributes for LFS
+                if [ ! -f ".gitattributes" ]; then
+                    cat > .gitattributes << 'GITATTR'
+# Git LFS - Track large binary files
+*.pdf filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.gif filter=lfs diff=lfs merge=lfs -text
+*.bmp filter=lfs diff=lfs merge=lfs -text
+*.webp filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.pptx filter=lfs diff=lfs merge=lfs -text
+*.docx filter=lfs diff=lfs merge=lfs -text
+*.xlsx filter=lfs diff=lfs merge=lfs -text
+GITATTR
+                    dsc_changed "file:.gitattributes (created)"
+                fi
+
+                # Create .gitignore
+                if [ ! -f ".gitignore" ]; then
+                    cat > .gitignore << 'GITIGN'
+# Obsidian workspace/cache (device-specific)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/plugins/*/data.json
+.obsidian/.obsidian.vimrc
+
+# System files
+.trash/
+.DS_Store
+Thumbs.db
+GITIGN
+                    dsc_changed "file:.gitignore (created)"
+                fi
+
+                # Configure remote
+                git remote add origin "$OBSIDIAN_GIT_REMOTE" 2>/dev/null || \
+                    git remote set-url origin "$OBSIDIAN_GIT_REMOTE"
+                dsc_changed "git:remote (configured)"
+
+                # Initial commit and push
+                git add -A
+                if git commit -m "Initial vault commit from $(hostname -s)" --no-gpg-sign &>/dev/null; then
+                    dsc_changed "git:commit (initial)"
+                    if git push -u origin main &>/dev/null 2>&1 || git push -u origin master &>/dev/null 2>&1; then
+                        dsc_changed "git:push (initial)"
+                    else
+                        dsc_info "git:push failed - may need to create repo on GitHub first"
+                    fi
+                else
+                    dsc_info "git:commit (no changes or already committed)"
+                fi
+                cd "$CLAUDE_HOME"
+            fi
+        else
+            dsc_unchanged "git:repo (already initialized)"
+
+            # Update remote URL if credentials available and different
+            if [ -n "$OBSIDIAN_GIT_REMOTE" ]; then
+                cd "$OBSIDIAN_VAULT_PATH"
+                current_remote=$(git remote get-url origin 2>/dev/null || echo "")
+                if [ "$current_remote" != "$OBSIDIAN_GIT_REMOTE" ]; then
+                    git remote set-url origin "$OBSIDIAN_GIT_REMOTE"
+                    dsc_changed "git:remote (updated)"
+                else
+                    dsc_unchanged "git:remote"
+                fi
+                cd "$CLAUDE_HOME"
+            fi
+        fi
+
+        # Configure sync service (only if vault is now a git repo)
+        if [ -d "$OBSIDIAN_VAULT_PATH/.git" ]; then
+            SYNC_SCRIPT="$CLAUDE_HOME/services/obsidian-git-sync/sync.sh"
+
+            if [ -f "$SYNC_SCRIPT" ] || [ -L "$SYNC_SCRIPT" ]; then
+                chmod +x "$SYNC_SCRIPT" 2>/dev/null || true
+                dsc_unchanged "script:obsidian-sync.sh"
+
+                # Install service (platform-specific)
+                if [ "$DSC_PLATFORM" = "mac" ]; then
+                    OBSIDIAN_PLIST="$HOME/Library/LaunchAgents/com.claude.obsidian-git-sync.plist"
+
+                    if [ -f "$REPO_DIR/services/obsidian-git-sync/com.claude.obsidian-git-sync.plist.template" ]; then
+                        ensure_file_template "$REPO_DIR/services/obsidian-git-sync/com.claude.obsidian-git-sync.plist.template" \
+                            "$OBSIDIAN_PLIST" \
+                            "{{HOME}}=$HOME" \
+                            "{{CLAUDE_HOME}}=$CLAUDE_HOME" \
+                            "{{OBSIDIAN_VAULT_PATH}}=$OBSIDIAN_VAULT_PATH"
+
+                        if launchctl list 2>/dev/null | grep -q "com.claude.obsidian-git-sync"; then
+                            dsc_unchanged "service:obsidian-git-sync (running)"
+                        else
+                            if launchctl load "$OBSIDIAN_PLIST" 2>/dev/null; then
+                                dsc_changed "service:obsidian-git-sync (started)"
+                            else
+                                dsc_info "service:obsidian-git-sync - load manually: launchctl load $OBSIDIAN_PLIST"
+                                dsc_unchanged "service:obsidian-git-sync (plist ready)"
+                            fi
+                        fi
+                    else
+                        dsc_failed "obsidian-git-sync (plist template not found)"
+                    fi
+
+                elif [ "$DSC_PLATFORM" = "linux" ]; then
+                    # systemd user service + timer
+                    SERVICE_DIR="$HOME/.config/systemd/user"
+                    ensure_directory "$SERVICE_DIR"
+
+                    # Enable linger so user services run after logout
+                    ensure_user_linger
+
+                    SERVICE_TEMPLATE="$REPO_DIR/services/obsidian-git-sync/obsidian-git-sync.service.template"
+                    TIMER_TEMPLATE="$REPO_DIR/services/obsidian-git-sync/obsidian-git-sync.timer.template"
+
+                    if [ -f "$SERVICE_TEMPLATE" ] && [ -f "$TIMER_TEMPLATE" ]; then
+                        # Generate and install service file
+                        ensure_file_template "$SERVICE_TEMPLATE" \
+                            "$SERVICE_DIR/obsidian-git-sync.service" \
+                            "{{HOME}}=$HOME" \
+                            "{{CLAUDE_HOME}}=$CLAUDE_HOME" \
+                            "{{OBSIDIAN_VAULT_PATH}}=$OBSIDIAN_VAULT_PATH"
+
+                        # Generate and install timer file (no substitutions needed)
+                        ensure_file_copy "$TIMER_TEMPLATE" "$SERVICE_DIR/obsidian-git-sync.timer" "obsidian-git-sync.timer"
+
+                        # Reload systemd
+                        systemctl --user daemon-reload 2>/dev/null || true
+
+                        # Enable and start timer
+                        if systemctl --user is-active obsidian-git-sync.timer &>/dev/null; then
+                            dsc_unchanged "service:obsidian-git-sync.timer (running)"
+                        elif systemctl --user is-enabled obsidian-git-sync.timer &>/dev/null; then
+                            if systemctl --user start obsidian-git-sync.timer 2>/dev/null; then
+                                dsc_changed "service:obsidian-git-sync.timer (started)"
+                            else
+                                dsc_info "service:obsidian-git-sync.timer - start manually: systemctl --user start obsidian-git-sync.timer"
+                            fi
+                        else
+                            if systemctl --user enable --now obsidian-git-sync.timer 2>/dev/null; then
+                                dsc_changed "service:obsidian-git-sync.timer (enabled and started)"
+                            else
+                                dsc_info "service:obsidian-git-sync.timer - enable manually: systemctl --user enable --now obsidian-git-sync.timer"
+                                dsc_unchanged "service:obsidian-git-sync (unit files installed)"
+                            fi
+                        fi
+                    else
+                        dsc_failed "obsidian-git-sync (systemd templates not found)"
+                    fi
+                else
+                    dsc_skipped "service:obsidian-git-sync (unsupported platform)"
+                fi
+            else
+                dsc_failed "obsidian-git-sync (sync.sh not found)"
+            fi
+        fi
+    fi
 fi
 
 # ============================================================================
@@ -483,21 +786,27 @@ fi
 echo ""
 echo "── Step 10: Applications ──"
 
-# Obsidian
+# Obsidian (optional - not required if using git sync only)
 if [ "$DSC_PLATFORM" = "mac" ]; then
     if [ -d "/Applications/Obsidian.app" ]; then
-        dsc_unchanged "app:Obsidian"
-    elif command -v brew &>/dev/null; then
-        echo -e "  ${_BLUE}Installing Obsidian...${_NC}"
-        if dsc_run_brew install --cask obsidian &>/dev/null; then
-            dsc_changed "app:Obsidian (installed)"
-        else
-            dsc_failed "app:Obsidian"
-        fi
+        dsc_unchanged "app:Obsidian (optional, installed)"
+    else
+        # Don't auto-install - Obsidian.app is optional with git sync
+        dsc_skipped "app:Obsidian (not required with git sync)"
     fi
-
-    # Vault directory
-    ensure_directory "$HOME/Obsidian/Simon-Personal"
+elif [ "$DSC_PLATFORM" = "linux" ]; then
+    # Check various Obsidian installation methods on Linux
+    if command -v obsidian &>/dev/null; then
+        dsc_unchanged "app:Obsidian (optional, installed)"
+    elif [ -d "/opt/Obsidian" ] || [ -f "$HOME/Applications/Obsidian.AppImage" ]; then
+        dsc_unchanged "app:Obsidian (optional, installed via AppImage)"
+    elif snap list obsidian &>/dev/null 2>&1; then
+        dsc_unchanged "app:Obsidian (optional, installed via snap)"
+    elif flatpak list --app 2>/dev/null | grep -qi obsidian; then
+        dsc_unchanged "app:Obsidian (optional, installed via flatpak)"
+    else
+        dsc_skipped "app:Obsidian (not required with git sync - install via AppImage/snap/flatpak if needed)"
+    fi
 fi
 
 # ============================================================================

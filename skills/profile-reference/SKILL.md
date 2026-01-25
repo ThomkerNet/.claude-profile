@@ -76,19 +76,6 @@ When consulting multiple models, dispatch in parallel:
 
 **When:** Verifying API syntax, best practices, breaking changes, code examples.
 
-### Firecrawl - Web Scraping
-
-**Preferred over WebFetch/WebSearch.**
-
-| Tool | Use |
-|------|-----|
-| `firecrawl_scrape` | Single page |
-| `firecrawl_search` | Web search |
-| `firecrawl_map` | Discover URLs |
-| `firecrawl_crawl` | Multi-page |
-| `firecrawl_extract` | Structured data |
-| `firecrawl_agent` | Autonomous (no URLs needed) |
-
 ### Puppeteer - Browser Automation
 
 | Tool | Use |
