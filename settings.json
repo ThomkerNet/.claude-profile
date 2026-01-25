@@ -5,13 +5,44 @@
     "command": "/Users/sbarker/.claude/statuslines/statusline.sh"
   },
   "hooks": {
-    "PreToolUse": [
+    "Stop": [
       {
-        "matcher": "AskUserQuestion",
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/sbarker/.claude/hooks/block-ask-user-question.py"
+            "command": "bun run /Users/sbarker/.claude/hooks/telegram-bun/stop-check.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun run /Users/sbarker/.claude/hooks/telegram-bun/notify.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun run /Users/sbarker/.claude/hooks/spec-poller/index.ts"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /Users/sbarker/.claude/hooks/telegram-bun/check.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun run /Users/sbarker/.claude/hooks/spec-checker/index.ts"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun run /Users/sbarker/.claude/hooks/telegram-bun/poll.ts"
           }
         ]
       }

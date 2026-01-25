@@ -1,0 +1,367 @@
+#!/usr/bin/env bash
+#
+# tts - Text-to-Speech CLI using Azure AI Speech
+#
+# Usage: tts [options] "text" [output_file]
+#
+# Generates synthetic speech from text using Azure AI Speech service.
+# Primary use: Generate voice notes for BriefHours Whisper transcription testing.
+
+set -eo pipefail
+
+# Configuration
+readonly SPEECH_ENDPOINT="https://uksouth.tts.speech.microsoft.com/cognitiveservices/v1"
+readonly KEYVAULT_NAME="kv-bnx-shared-01"
+readonly KEYVAULT_SECRET="speech-api-key"
+readonly OUTPUT_DIR="${HOME}/.claude/output/audio"
+readonly MAX_INPUT_SIZE=10240  # 10KB
+
+# Defaults
+DEFAULT_VOICE="en-GB-SoniaNeural"
+DEFAULT_FORMAT="wav"
+DEFAULT_RATE="medium"
+DEFAULT_PITCH="medium"
+
+# State
+voice="$DEFAULT_VOICE"
+format="$DEFAULT_FORMAT"
+rate="$DEFAULT_RATE"
+pitch="$DEFAULT_PITCH"
+dry_run=false
+text=""
+output_file=""
+
+# --- Lookup Functions ---
+
+get_voice_description() {
+    case "$1" in
+        en-GB-SoniaNeural)  echo "Female, British, Default" ;;
+        en-GB-RyanNeural)   echo "Male, British" ;;
+        en-GB-LibbyNeural)  echo "Female, British" ;;
+        en-GB-ThomasNeural) echo "Male, British" ;;
+        en-US-JennyNeural)  echo "Female, American" ;;
+        en-US-GuyNeural)    echo "Male, American" ;;
+        *)                  echo "" ;;
+    esac
+}
+
+is_valid_voice() {
+    case "$1" in
+        en-GB-SoniaNeural|en-GB-RyanNeural|en-GB-LibbyNeural|en-GB-ThomasNeural|en-US-JennyNeural|en-US-GuyNeural)
+            return 0 ;;
+        *)
+            return 1 ;;
+    esac
+}
+
+get_format_header() {
+    case "$1" in
+        wav) echo "riff-24khz-16bit-mono-pcm" ;;
+        mp3) echo "audio-24khz-160kbitrate-mono-mp3" ;;
+        *)   echo "" ;;
+    esac
+}
+
+is_valid_format() {
+    case "$1" in
+        wav|mp3) return 0 ;;
+        *)       return 1 ;;
+    esac
+}
+
+is_valid_rate() {
+    case "$1" in
+        x-slow|slow|medium|fast|x-fast) return 0 ;;
+        *)                               return 1 ;;
+    esac
+}
+
+is_valid_pitch() {
+    case "$1" in
+        x-low|low|medium|high|x-high) return 0 ;;
+        *)                             return 1 ;;
+    esac
+}
+
+# --- Functions ---
+
+usage() {
+    cat <<EOF
+Usage: tts [options] "text" [output_file]
+
+Generate speech from text using Azure AI Speech.
+
+Options:
+  -v, --voice VOICE     Voice name (default: $DEFAULT_VOICE)
+  -f, --format FORMAT   Output format: wav, mp3 (default: $DEFAULT_FORMAT)
+  -r, --rate RATE       Speech rate: x-slow, slow, medium, fast, x-fast
+  -p, --pitch PITCH     Voice pitch: x-low, low, medium, high, x-high
+  -l, --list-voices     List available voices
+  --dry-run             Output SSML without calling API
+  -h, --help            Show this help
+
+Examples:
+  tts "Hello world"                           # Default voice, WAV, auto-named
+  tts "Hello world" output.wav                # Specific filename
+  tts -v en-GB-RyanNeural "Hello" ryan.wav    # Male voice
+  tts -f mp3 "Hello" test.mp3                 # MP3 format
+  tts -r fast -p high "Excited!" excited.wav  # Prosody controls
+  tts --list-voices                           # Show available voices
+
+Environment:
+  AZURE_SPEECH_KEY      API key (falls back to Key Vault if not set)
+EOF
+}
+
+list_voices() {
+    echo "Available voices:"
+    echo ""
+    printf "%-25s %s\n" "Voice" "Description"
+    printf "%-25s %s\n" "-----" "-----------"
+    for v in en-GB-SoniaNeural en-GB-RyanNeural en-GB-LibbyNeural en-GB-ThomasNeural en-US-JennyNeural en-US-GuyNeural; do
+        printf "%-25s %s\n" "$v" "$(get_voice_description "$v")"
+    done
+}
+
+err() {
+    echo "Error: $*" >&2
+    exit 1
+}
+
+warn() {
+    echo "Warning: $*" >&2
+}
+
+# Escape XML special characters
+xml_escape() {
+    local text="$1"
+    text="${text//&/&amp;}"
+    text="${text//</&lt;}"
+    text="${text//>/&gt;}"
+    text="${text//\"/&quot;}"
+    text="${text//\'/&apos;}"
+    echo "$text"
+}
+
+# Get API key from environment or Key Vault
+get_api_key() {
+    # Try environment variable first
+    if [[ -n "${AZURE_SPEECH_KEY:-}" ]]; then
+        echo "$AZURE_SPEECH_KEY"
+        return 0
+    fi
+
+    # Fall back to Key Vault
+    if command -v az &>/dev/null; then
+        local key
+        key=$(az keyvault secret show \
+            --vault-name "$KEYVAULT_NAME" \
+            --name "$KEYVAULT_SECRET" \
+            --query value -o tsv 2>/dev/null) || {
+            err "Failed to retrieve API key from Key Vault. Set AZURE_SPEECH_KEY or ensure 'az' is logged in."
+        }
+        echo "$key"
+        return 0
+    fi
+
+    err "No AZURE_SPEECH_KEY set and 'az' CLI not available for Key Vault fallback"
+}
+
+# Build SSML document
+build_ssml() {
+    local text="$1"
+    local escaped_text
+    escaped_text=$(xml_escape "$text")
+
+    # Build prosody element if rate or pitch differ from defaults
+    local prosody_open=""
+    local prosody_close=""
+    if [[ "$rate" != "medium" || "$pitch" != "medium" ]]; then
+        prosody_open="<prosody rate=\"$rate\" pitch=\"$pitch\">"
+        prosody_close="</prosody>"
+    fi
+
+    cat <<EOF
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-GB">
+    <voice name="$voice">
+        ${prosody_open}${escaped_text}${prosody_close}
+    </voice>
+</speak>
+EOF
+}
+
+# Generate output filename with timestamp
+generate_filename() {
+    local ext="${1:-wav}"
+    local timestamp
+    timestamp=$(date +"%Y%m%d_%H%M%S")
+    echo "${OUTPUT_DIR}/tts_${timestamp}.${ext}"
+}
+
+# Validate inputs
+validate() {
+    # Check voice
+    if ! is_valid_voice "$voice"; then
+        err "Unknown voice: $voice. Use --list-voices to see available options."
+    fi
+
+    # Check format
+    if ! is_valid_format "$format"; then
+        err "Unknown format: $format. Supported: wav, mp3"
+    fi
+
+    # Check rate
+    if ! is_valid_rate "$rate"; then
+        err "Unknown rate: $rate. Supported: x-slow, slow, medium, fast, x-fast"
+    fi
+
+    # Check pitch
+    if ! is_valid_pitch "$pitch"; then
+        err "Unknown pitch: $pitch. Supported: x-low, low, medium, high, x-high"
+    fi
+
+    # Check text
+    if [[ -z "$text" ]]; then
+        err "No text provided"
+    fi
+
+    # Check input size
+    if [[ ${#text} -gt $MAX_INPUT_SIZE ]]; then
+        err "Input text exceeds maximum size of $MAX_INPUT_SIZE bytes"
+    fi
+
+    # Check output directory writable
+    if [[ ! -w "$OUTPUT_DIR" ]]; then
+        err "Output directory not writable: $OUTPUT_DIR"
+    fi
+
+    # If output file specified, check parent directory
+    if [[ -n "$output_file" ]]; then
+        local dir
+        dir=$(dirname "$output_file")
+        if [[ ! -w "$dir" ]]; then
+            err "Cannot write to: $dir"
+        fi
+    fi
+}
+
+# --- Main ---
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -v|--voice)
+            voice="${2:-}"
+            shift 2
+            ;;
+        -f|--format)
+            format="${2:-}"
+            shift 2
+            ;;
+        -r|--rate)
+            rate="${2:-}"
+            shift 2
+            ;;
+        -p|--pitch)
+            pitch="${2:-}"
+            shift 2
+            ;;
+        -l|--list-voices)
+            list_voices
+            exit 0
+            ;;
+        --dry-run)
+            dry_run=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        -*)
+            err "Unknown option: $1"
+            ;;
+        *)
+            # Positional arguments: text and optional output file
+            if [[ -z "$text" ]]; then
+                text="$1"
+            elif [[ -z "$output_file" ]]; then
+                output_file="$1"
+            else
+                err "Unexpected argument: $1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Validate
+validate
+
+# Set output file if not specified
+if [[ -z "$output_file" ]]; then
+    output_file=$(generate_filename "$format")
+fi
+
+# Build SSML
+ssml=$(build_ssml "$text")
+
+# Get format header
+format_header=$(get_format_header "$format")
+
+# Dry run mode
+if [[ "$dry_run" == true ]]; then
+    echo "=== Dry Run ===" >&2
+    echo "Voice: $voice" >&2
+    echo "Format: $format ($format_header)" >&2
+    echo "Rate: $rate" >&2
+    echo "Pitch: $pitch" >&2
+    echo "Output: $output_file" >&2
+    echo "" >&2
+    echo "=== SSML ===" >&2
+    echo "$ssml" >&2
+    exit 0
+fi
+
+# Get API key (suppress trace for security)
+set +x 2>/dev/null || true
+api_key=$(get_api_key)
+
+# Make API request
+http_code=$(curl -s -w "%{http_code}" -X POST "$SPEECH_ENDPOINT" \
+    -H "Ocp-Apim-Subscription-Key: ${api_key}" \
+    -H "Content-Type: application/ssml+xml" \
+    -H "X-Microsoft-OutputFormat: ${format_header}" \
+    -d "$ssml" \
+    -o "$output_file" \
+    --connect-timeout 10 \
+    --max-time 60)
+
+# Check response
+case "$http_code" in
+    200)
+        # Verify file was created and has content
+        if [[ ! -s "$output_file" ]]; then
+            rm -f "$output_file"
+            err "API returned 200 but no audio data received"
+        fi
+        echo "$output_file"
+        ;;
+    401)
+        rm -f "$output_file"
+        err "Authentication failed (401). Check your AZURE_SPEECH_KEY or Key Vault access."
+        ;;
+    429)
+        rm -f "$output_file"
+        err "Rate limited (429). Wait a moment and try again."
+        ;;
+    *)
+        # Try to read error from file if it's text
+        error_msg=""
+        if [[ -f "$output_file" ]] && file "$output_file" | grep -q "text"; then
+            error_msg=$(cat "$output_file")
+        fi
+        rm -f "$output_file"
+        err "API request failed with HTTP $http_code${error_msg:+: $error_msg}"
+        ;;
+esac
