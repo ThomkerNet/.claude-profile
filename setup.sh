@@ -344,6 +344,7 @@ ensure_symlink "$REPO_DIR/plugins" "$CLAUDE_HOME/plugins" "plugins/"
 ensure_symlink "$REPO_DIR/docs" "$CLAUDE_HOME/docs" "docs/"
 ensure_symlink "$REPO_DIR/configs" "$CLAUDE_HOME/configs" "configs/"
 ensure_symlink "$REPO_DIR/CLAUDE.md" "$CLAUDE_HOME/CLAUDE.md" "CLAUDE.md"
+[ -f "$REPO_DIR/secrets.json" ] && ensure_symlink "$REPO_DIR/secrets.json" "$CLAUDE_HOME/secrets.json" "secrets.json"
 
 # ============================================================================
 # Step 5: Settings & Templates
@@ -418,6 +419,16 @@ if [ -f "$REPO_DIR/secrets.json" ] && command -v jq &>/dev/null; then
     FIRECRAWL_KEY=$(jq -r '.api_keys.firecrawl // empty' "$REPO_DIR/secrets.json")
     if [ -n "$FIRECRAWL_KEY" ] && [ "$FIRECRAWL_KEY" != "YOUR_FIRECRAWL_API_KEY" ]; then
         ensure_profile_entry "FIRECRAWL_API_KEY" "export FIRECRAWL_API_KEY='$FIRECRAWL_KEY'"
+    fi
+
+    # LiteLLM proxy config for AI peer review
+    LITELLM_URL=$(jq -r '.litellm.base_url // empty' "$REPO_DIR/secrets.json")
+    LITELLM_KEY=$(jq -r '.litellm.api_key // empty' "$REPO_DIR/secrets.json")
+    if [ -n "$LITELLM_URL" ]; then
+        ensure_profile_entry "LITELLM_BASE_URL" "export LITELLM_BASE_URL='$LITELLM_URL'"
+    fi
+    if [ -n "$LITELLM_KEY" ]; then
+        ensure_profile_entry "LITELLM_API_KEY" "export LITELLM_API_KEY='$LITELLM_KEY'"
     fi
 fi
 
