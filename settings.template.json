@@ -10,14 +10,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/stop-check.ts"
-          },
-          {
-            "type": "command",
-            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/notify.ts"
-          },
-          {
-            "type": "command",
             "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/spec-poller/index.ts"
           }
         ]
@@ -28,21 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/check.ts"
-          },
-          {
-            "type": "command",
             "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/spec-checker/index.ts"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/telegram-bun/poll.ts"
           }
         ]
       }

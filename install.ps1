@@ -4,7 +4,6 @@
 # This script sets up a complete Claude Code environment including:
 # - Settings and hooks
 # - MCP servers
-# - Telegram integration
 # - All dependencies
 #
 # Usage:
@@ -299,7 +298,7 @@ Write-Info "Generating slash commands..."
 if (-not (Test-Path "commands")) { New-Item -ItemType Directory -Path "commands" | Out-Null }
 
 # Generate from templates
-$templates = @("telegram", "telegram-end", "vault")
+$templates = @("vault")
 foreach ($name in $templates) {
     $templatePath = "commands/$name.template.md"
     if (Test-Path $templatePath) {
@@ -312,22 +311,6 @@ foreach ($name in $templates) {
 
 Write-Success "Slash commands generated"
 
-# Step 4: Install dependencies
-Write-Host ""
-Write-Host "── Step 4: Dependencies ──" -ForegroundColor Cyan
-
-if (Test-Path "hooks/telegram-bun") {
-    Write-Info "Installing Telegram integration dependencies..."
-    Push-Location "hooks/telegram-bun"
-    try {
-        & $BunPath install 2>$null
-        Write-Success "Telegram dependencies installed"
-    } catch {
-        Write-Warn "Bun install had warnings"
-    }
-    Pop-Location
-}
-
 # Step 5: Apply secrets from repo
 Write-Host ""
 Write-Host "── Step 5: Secrets ──" -ForegroundColor Cyan
@@ -338,19 +321,23 @@ if (Test-Path $SecretsPath) {
     try {
         $secrets = Get-Content $SecretsPath -Raw | ConvertFrom-Json
 
-        # Apply Telegram credentials
-        if ($secrets.telegram.bot_token -and $secrets.telegram.bot_token -ne "YOUR_BOT_TOKEN") {
-            Write-Info "Configuring Telegram..."
-            & $BunPath run "$ClaudeHome\hooks\telegram-bun\index.ts" config $secrets.telegram.bot_token $secrets.telegram.chat_id
-            Write-Success "Telegram configured"
-        }
-
         # Set Firecrawl API key as environment variable
         if ($secrets.api_keys.firecrawl -and $secrets.api_keys.firecrawl -ne "YOUR_FIRECRAWL_API_KEY") {
             Write-Info "Setting Firecrawl API key..."
             [System.Environment]::SetEnvironmentVariable('FIRECRAWL_API_KEY', $secrets.api_keys.firecrawl, 'User')
             Write-Success "Firecrawl API key set as user environment variable"
         }
+
+        # Set LiteLLM config as environment variables
+        if ($secrets.litellm.base_url) {
+            [System.Environment]::SetEnvironmentVariable('LITELLM_BASE_URL', $secrets.litellm.base_url, 'User')
+            Write-Success "LiteLLM base URL set"
+        }
+        if ($secrets.litellm.api_key) {
+            [System.Environment]::SetEnvironmentVariable('LITELLM_API_KEY', $secrets.litellm.api_key, 'User')
+            Write-Success "LiteLLM API key set"
+        }
+
         Write-Success "Secrets applied"
     } catch {
         Write-Warn "Could not parse secrets.json: $_"
@@ -406,7 +393,9 @@ Write-Host ""
 Write-Host "── Step 7: Environment Variables ──" -ForegroundColor Cyan
 
 Write-Info "The following environment variables may be needed:"
-Write-Host "  FIRECRAWL_API_KEY  - For Firecrawl MCP server"
+Write-Host "  FIRECRAWL_API_KEY   - For Firecrawl MCP server"
+Write-Host "  LITELLM_BASE_URL    - For AI peer review"
+Write-Host "  LITELLM_API_KEY     - For AI peer review"
 Write-Host ""
 Write-Info "Set via: [System.Environment]::SetEnvironmentVariable('VAR', 'value', 'User')"
 
@@ -428,16 +417,6 @@ if ($CopilotInstalled) {
     Write-Host "  (Requires GitHub Copilot Pro subscription)"
 }
 
-# Step 9: Telegram setup reminder
-Write-Host ""
-Write-Host "── Step 9: Telegram Setup (Optional) ──" -ForegroundColor Cyan
-
-Write-Info "To enable Telegram notifications:"
-Write-Host "  1. Create a bot via @BotFather on Telegram"
-Write-Host "  2. Get your chat ID from: https://api.telegram.org/bot<TOKEN>/getUpdates"
-Write-Host "  3. Run: $BunPath run $ClaudeHome\hooks\telegram-bun\index.ts config <BOT_TOKEN> <CHAT_ID>"
-Write-Host "  4. In Claude, use /telegram to start integration"
-
 # Done!
 Write-Host ""
 Write-Host "╔════════════════════════════════════════════╗" -ForegroundColor Green
@@ -453,7 +432,6 @@ Write-Host "  3. Run 'gemini' to login to Gemini (for second opinions)"
 if ($CopilotInstalled) {
     Write-Host "  4. Run 'copilot' to login to GitHub Copilot (for terminal help)"
 }
-Write-Host "  5. Use /telegram in Claude to enable Telegram integration"
 if ($BwInstalled) {
     Write-Host ""
     Write-Host "  Vaultwarden setup (one-time):"

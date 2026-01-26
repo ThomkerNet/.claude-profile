@@ -372,21 +372,6 @@ ensure_file_template "$REPO_DIR/settings.template.json" "$CLAUDE_HOME/settings.j
 echo ""
 echo "── Step 6: Hook Dependencies ──"
 
-if [ -d "$REPO_DIR/hooks/telegram-bun" ] && [ -n "$BUN_PATH" ]; then
-    # Check if node_modules exists and is current
-    if [ -d "$REPO_DIR/hooks/telegram-bun/node_modules" ]; then
-        dsc_unchanged "deps:telegram-bun"
-    else
-        echo -e "  ${_BLUE}Installing Telegram dependencies...${_NC}"
-        (cd "$REPO_DIR/hooks/telegram-bun" && $BUN_PATH install 2>&1 | grep -E "packages|Done" | head -2 | sed 's/^/    /')
-        if [ -d "$REPO_DIR/hooks/telegram-bun/node_modules" ]; then
-            dsc_changed "deps:telegram-bun (installed)"
-        else
-            dsc_failed "deps:telegram-bun"
-        fi
-    fi
-fi
-
 if [ -d "$REPO_DIR/quota-fetcher" ] && [ -n "$BUN_PATH" ]; then
     if [ -d "$REPO_DIR/quota-fetcher/node_modules" ]; then
         dsc_unchanged "deps:quota-fetcher"
@@ -868,29 +853,14 @@ else
 fi
 
 # ============================================================================
-# Step 12: Secrets (Interactive)
+# Step 12: Secrets Check
 # ============================================================================
 
 echo ""
 echo "── Step 12: Secrets ──"
 
 if [ -f "$REPO_DIR/secrets.json" ] && command -v jq &>/dev/null; then
-    BOT_TOKEN=$(jq -r '.telegram.bot_token // empty' "$REPO_DIR/secrets.json")
-    CHAT_ID=$(jq -r '.telegram.chat_id // empty' "$REPO_DIR/secrets.json")
-
-    if [ -n "$BOT_TOKEN" ] && [ "$BOT_TOKEN" != "YOUR_BOT_TOKEN" ] && [ -n "$BUN_PATH" ]; then
-        # Check if already configured
-        if [ -f "$CLAUDE_HOME/.telegram-config.json" ]; then
-            dsc_unchanged "config:telegram"
-        else
-            if $BUN_PATH run "$REPO_DIR/hooks/telegram-bun/index.ts" config "$BOT_TOKEN" "$CHAT_ID" &>/dev/null; then
-                dsc_changed "config:telegram (configured)"
-            else
-                dsc_failed "config:telegram"
-            fi
-        fi
-    fi
-    dsc_unchanged "secrets:applied"
+    dsc_unchanged "secrets:secrets.json (found)"
 else
     dsc_skipped "secrets (no secrets.json or jq missing)"
 fi

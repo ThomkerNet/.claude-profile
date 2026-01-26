@@ -6,11 +6,10 @@ A portable, self-contained Claude Code configuration that works on Windows, macO
 
 ## Features
 
-- **Telegram Integration** - Remote control Claude via Telegram with two-way communication
-- **MCP Servers** - Pre-configured Context7, Puppeteer, Sequential Thinking
-- **Gemini Second Opinions** - Get alternative perspectives via Gemini CLI
+- **MCP Servers** - Pre-configured Context7, Puppeteer, Sequential Thinking, Firecrawl
+- **AI Peer Review** - Multi-model code review via LiteLLM proxy
 - **Custom Skills** - Solution review skill for comprehensive code audits
-- **Slash Commands** - `/telegram`, `/telegram-end`, `/review`, `/cname`
+- **Slash Commands** - `/aipeerreview`, `/review`, `/cname`, `/z`
 - **Status Line** - Cross-platform status bar with model, directory, git branch, and custom labels
 - **Portable** - Clone once, sync everywhere. Config stays in sync via git, runtime data stays local.
 
@@ -57,7 +56,7 @@ cd $HOME\.claude-profile
 | `bootstrap.sh` | First-time setup script |
 | `setup.sh` | Core installation script (called by bootstrap) |
 | `sync.sh` | Quick update script |
-| `commands/` | Slash commands for Telegram integration |
+| `commands/` | Slash commands |
 | `hooks/` | PostToolUse, UserPromptSubmit, Stop hooks |
 | `skills/` | Solution review skill |
 | `agents/` | Custom agents |
@@ -83,19 +82,7 @@ cd $HOME\.claude-profile
 
 ## Post-Install Setup
 
-### 1. Telegram Integration (Optional)
-
-```bash
-# 1. Create bot via @BotFather on Telegram
-# 2. Get chat ID from https://api.telegram.org/bot<TOKEN>/getUpdates
-# 3. Configure:
-bun run ~/.claude/hooks/telegram-bun/index.ts config <BOT_TOKEN> <CHAT_ID>
-
-# 4. In Claude, run:
-/telegram
-```
-
-### 2. tmux Configuration (macOS/Linux)
+### 1. tmux Configuration (macOS/Linux)
 
 The setup script automatically:
 - Installs tmux (via Homebrew on macOS, package manager on Linux)
@@ -116,16 +103,17 @@ On macOS, tmux is configured to integrate with the system clipboard:
 
 Uses `pbcopy` and `pbpaste` for seamless integration with macOS system clipboard. This is only applied on macOS.
 
-### 3. Environment Variables
+### 2. Environment Variables
 
 Set these for full functionality:
 
 | Variable | Purpose |
 |----------|---------|
 | `FIRECRAWL_API_KEY` | Firecrawl MCP server |
-| `GEMINI_API_KEY` | Gemini CLI for second opinions |
+| `LITELLM_BASE_URL` | LiteLLM proxy URL for AI peer review |
+| `LITELLM_API_KEY` | LiteLLM API key |
 
-### 4. Verify MCP Servers
+### 3. Verify MCP Servers
 
 ```bash
 claude mcp list
@@ -137,11 +125,10 @@ claude mcp list
 
 | Command | Description |
 |---------|-------------|
-| `/telegram` | Start Telegram integration |
-| `/telegram-end` | End Telegram integration |
 | `/cname <label>` | Set a custom session label in the status bar |
-| `/aipeerreview [file]` | Multi-model AI peer review of plans/issues |
+| `/aipeerreview [file]` | Multi-model AI peer review of plans/code |
 | `/z [message]` | Zero-friction commit, push, and document |
+| `/review` | Comprehensive solution review |
 
 ### Status Line
 
@@ -179,94 +166,41 @@ The custom label appears in the status line and is stored in `~/.claude/.session
 
 ### AI Peer Review (`/aipeerreview`)
 
-Get comprehensive peer reviews of your plans and issues using multiple AI models simultaneously.
+Get comprehensive peer reviews of your plans and code using multiple AI models simultaneously via LiteLLM proxy.
 
 #### What It Does
 
-Sends your most recent plan or issue file to **three AI models in parallel** for comprehensive vetting:
-- **ChatGPT (gpt-5.1)** - Advanced reasoning and practical insights
-- **Gemini Pro (gemini-3-pro-preview)** - Multi-modal understanding and novel perspectives
-- **Claude Opus (claude-opus-4.5)** - Comprehensive analysis and edge case detection
+Sends your code or plan to **three AI models in parallel** for comprehensive vetting:
+- **GPT-5.1** - Advanced reasoning and practical insights
+- **Gemini 3 Pro** - Multi-modal understanding and novel perspectives
+- **Gemini 2.5 Pro** - Comprehensive analysis and edge case detection
 
 #### Usage
 
 ```bash
-/aipeerreview                         # Review most recent plan
-/aipeerreview plans/my-feature.md    # Review specific file
+/aipeerreview                         # Review git changes or most recent plan
+/aipeerreview -t security auth.ts     # Security review of specific file
+/aipeerreview --mode plan             # Review most recent plan
 ```
+
+#### Review Types
+
+| Type | Focus Areas |
+|------|-------------|
+| `security` | Injection, auth, OWASP vulnerabilities |
+| `architecture` | Design patterns, scalability, coupling |
+| `bug` | Logic errors, edge cases, race conditions |
+| `performance` | Complexity, optimization, bottlenecks |
+| `api` | REST design, contracts, versioning |
+| `test` | Coverage gaps, mocking, assertions |
+| `general` | Broad code quality assessment |
 
 #### Features
 
-- **Parallel execution** - All 3 models run simultaneously (~3x faster than sequential)
-- **Automatic discovery** - Finds most recent plan in `~/.claude/plans/` or items in `queue.md`
-- **Structured reviews** - Each model provides:
-  - Strengths and what works well
-  - Weaknesses, pitfalls, and edge cases
-  - Feasibility concerns
-  - Security implications
-  - Actionable recommendations
-
-- **Consensus detection** - See what all models agree on vs. divergent opinions
-- **Handles complex documents** - 10MB+ buffer for large plans
-
-#### Example Output
-
-```
-🔍🔍🔍 AI PEER REVIEW - Multi-Model Analysis 🔍🔍🔍
-
-Document: my-feature-plan.md
-Models: ChatGPT, Gemini Pro, Claude Opus
-
-⚡ Starting parallel peer review across 3 AI models...
-
-======================================================================
-📋 Review by ChatGPT
-======================================================================
-[Strengths and weaknesses analysis...]
-
-======================================================================
-📋 Review by Gemini Pro
-======================================================================
-[Alternative perspective with novel insights...]
-
-======================================================================
-📋 Review by Claude Opus
-======================================================================
-[Comprehensive analysis with security and feasibility assessment...]
-
-✅ Peer review complete! (87.3s)
-```
-
-#### When to Use
-
-- ✅ Before implementing major features
-- ✅ Validating architecture decisions
-- ✅ Security and feasibility review
-- ✅ Getting diverse perspectives on approach
-- ✅ Catching edge cases and pitfalls
-
-#### Tips
-
-- **Small plans execute faster** - Keep plans focused and concise
-- **Run in background** - Parallel execution means all 3 models work simultaneously (~30s for all 3)
-- **Custom labels** - Use `/cname "feature-name"` to label the session for easy reference
-- **Archive good reviews** - Save particularly insightful reviews to a `reviews/` folder
-
-#### Implementation Notes
-
-The `/aipeerreview` command uses the **Copilot CLI** to invoke multiple models in parallel:
-
-- **Async parallelization** - Uses `Promise.all()` with async `exec` for true non-blocking I/O
-- **Secure temp files** - Creates atomic temp directories with restrictive permissions (0o600)
-- **Guaranteed cleanup** - Try/finally blocks ensure temp files deleted even on errors
-- **Cross-platform** - Uses `os.tmpdir()` and `path.join()` for Windows/macOS/Linux compatibility
-- **Timeout protection** - 5-minute timeout prevents hung processes
-- **Model validation** - Allowlist check prevents injection attacks
-
-The feature was stress-tested using itself (meta peer review!) which identified and led to fixes for:
-- True async parallelization (not sequential blocking calls)
-- Reliable cleanup on all code paths
-- Windows path compatibility
+- **Parallel execution** - All 3 models run simultaneously
+- **Auto-detection** - Automatically finds git changes or plans
+- **Type-specific models** - Different model combinations for different review types
+- **Structured reviews** - Each model provides strengths, issues, recommendations
 
 ### Zero-Friction Commit (`/z`)
 
@@ -287,56 +221,6 @@ Automate the entire commit → push → document workflow in one command.
 /z "Implement user auth"     # Commit with custom message
 ```
 
-#### Features
-
-- **Smart categorization** - Groups changes by type (features, tests, docs, config)
-- **Semantic messages** - Auto-generates meaningful commit messages
-- **One-step workflow** - Combines git workflow into single command
-- **Automatic documentation** - Logs work in `plans/work-summary.md`
-- **Safety checks** - Fails if no changes exist
-- **Custom messages** - Optionally override generated message
-
-#### Example
-
-```
-📊 Analyzing changes...
-✅ Changes detected: 5 file(s)
-
-Generated commit message:
----
-Add AI peer review feature with fixes and documentation
-
-- Add/update: skills/aipeerreview/index.ts
-- Tests: skills/aipeerreview/test.ts
-- Documentation: README.md, plans/aipeerreview-feature.md
----
-
-✅ Changes staged
-✅ Committed
-✅ Pushed to remote
-📚 Work documented in work-summary.md
-
-✨ Done! Changes committed, pushed, and documented.
-```
-
-#### Workflow Benefits
-
-- **Faster iteration** - No manual commit/push/document steps
-- **Consistent commits** - Semantic messages across team
-- **Automatic logging** - Work history in version control
-- **Reduced context switching** - Stay in your workflow
-
-### Telegram Commands
-
-In Telegram:
-| Command | Description |
-|---------|-------------|
-| `/status` | List active Claude sessions |
-| `/tell do X` | Send instruction to Claude |
-| `! do X` | Shorthand for /tell |
-| `/ping` | Check if listener is alive |
-| `/help` | Show all commands |
-
 ### Skills
 
 | Skill | Trigger |
@@ -355,14 +239,15 @@ In Telegram:
 ├── settings.template.json  # Settings template
 ├── mcp-servers.json        # MCP servers to install
 ├── commands/               # Slash commands
-│   ├── telegram.md
-│   ├── telegram-end.md
 │   ├── cname.md
+│   ├── aipeerreview.md
 │   └── review.md
 ├── hooks/
-│   └── telegram-bun/       # Telegram integration
+│   └── memory/             # Memory hooks
 ├── skills/
 │   └── solution-review/    # Code review skill
+├── scripts/
+│   └── aipeerreview/       # AI peer review implementation
 ├── agents/                 # Custom agents
 ├── statuslines/
 │   ├── statusline.ps1      # PowerShell (Windows)
@@ -422,7 +307,6 @@ In Telegram:
 
 ```
 Add a new skill to ~/.claude-profile/skills/
-Update the Telegram command in ~/.claude-profile/commands/telegram.md
 Modify MCP server config in ~/.claude-profile/mcp-servers.json
 ```
 
@@ -431,16 +315,6 @@ Modify MCP server config in ~/.claude-profile/mcp-servers.json
 2. Changes to symlinked dirs (commands, skills, hooks) work immediately
 3. For template changes, ask Claude to run `./sync.sh`
 4. Commit and push from `~/.claude-profile/`
-
-**Example:**
-```
-User: "Add a new /status command that shows current git branch and model"
-
-Claude will:
-1. Create ~/.claude-profile/commands/status.md
-2. Test it (works immediately via symlink)
-3. Optionally commit: cd ~/.claude-profile && git add commands/status.md && git commit -m "Add status command"
-```
 
 **Safety:** Runtime data (`~/.claude/` credentials, history, plans) is never modified during meta-editing.
 
@@ -474,15 +348,6 @@ cd ~/.claude-profile
 ```bash
 claude mcp list  # Check status
 claude mcp remove <name> && claude mcp add ...  # Reinstall
-```
-
-### Telegram not responding
-```bash
-# Check listener
-/ping in Telegram
-
-# Restart listener
-bun run ~/.claude/hooks/telegram-bun/index.ts listen
 ```
 
 ### Settings not applying

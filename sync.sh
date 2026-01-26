@@ -177,29 +177,9 @@ else
     log_warn "settings.template.json not found in repo"
 fi
 
-# Step 5: Update hook dependencies if package.json changed
+# Step 5: Update MCP servers if config changed
 echo ""
-echo "── Step 5: Hook Dependencies ──"
-
-if [ -d "$REPO_DIR/hooks/telegram-bun" ]; then
-    # Check if package.json was modified recently (within last git pull)
-    if [ -f "$REPO_DIR/hooks/telegram-bun/package.json" ]; then
-        log_info "Checking Telegram hook dependencies..."
-        cd "$REPO_DIR/hooks/telegram-bun"
-
-        # Always run bun install to be safe (it's fast if nothing changed)
-        if $BUN_PATH install 2>/dev/null; then
-            log_success "Telegram dependencies up to date"
-        else
-            log_warn "Bun install had warnings or failed"
-        fi
-        cd "$CLAUDE_HOME"
-    fi
-fi
-
-# Step 6: Update MCP servers if config changed
-echo ""
-echo "── Step 6: MCP Servers ──"
+echo "── Step 5: MCP Servers ──"
 
 if command -v claude &> /dev/null && [ -f "$REPO_DIR/mcp-servers.json" ]; then
     log_info "Checking MCP server configuration..."

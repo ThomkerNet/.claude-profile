@@ -62,7 +62,7 @@ gh auth switch --user <ample-engineer|boroughnexus-cto>
 
 | Skill | Content |
 |-------|---------|
-| `/profile-reference` | MCP servers, router, Telegram, queue, statusline |
+| `/profile-reference` | MCP servers, router, statusline |
 | `/todoist-ref` | API examples, project IDs |
 | `/bw-ref` | Two-vault architecture, credential access |
 | `/obsidian-ref` | Vault structure, PARA organization |

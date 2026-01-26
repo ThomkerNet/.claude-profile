@@ -2,7 +2,7 @@
 #
 # Spec Watcher Daemon
 # Monitors project directories for new *-SPEC.md files
-# Auto-processes specs and notifies user via Telegram
+# Auto-processes specs and logs notifications
 #
 # Runs via launchd (macOS) or systemd timer (Linux)
 #
@@ -119,7 +119,7 @@ process_spec() {
             if $bun_path run "$processor" "$spec_path" "$plan_file" >> "$LOG_FILE" 2>&1; then
                 register_spec "$spec_path" "planned" "$plan_file"
 
-                # Send Telegram notification
+                # Log notification
                 send_notification "$spec_name" "$project_dir" "$plan_file"
 
                 log "Spec processed successfully: $spec_name"
@@ -136,28 +136,14 @@ process_spec() {
     register_spec "$spec_path" "pending" ""
 }
 
-# Send Telegram notification
+# Log notification about processed spec
 send_notification() {
     local spec_name="$1"
     local project_dir="$2"
     local plan_file="$3"
 
-    local telegram_hook="$CLAUDE_HOME/hooks/telegram-bun/index.ts"
-    local bun_path
-    bun_path=$(command -v bun || echo "$HOME/.bun/bin/bun")
-
-    if [ -f "$telegram_hook" ] && [ -x "$bun_path" ]; then
-        local message="📋 *New Spec Processed*
-
-*Spec:* \`$spec_name\`
-*Project:* \`$project_dir\`
-
-An implementation plan has been created and AI peer-reviewed.
-
-Run \`/review-spec\` in the project to review and approve implementation."
-
-        $bun_path run "$telegram_hook" send "$message" >> "$LOG_FILE" 2>&1 || true
-    fi
+    log "New spec processed: $spec_name in $project_dir"
+    log "Plan file: $plan_file"
 }
 
 # Main scan loop

@@ -7,7 +7,7 @@
 # - File stability check (waits for Obsidian Sync to finish writing)
 # - Aborts if >500 files changed (likely corruption/mistake)
 # - Aborts if diff >10000 lines changed (large binary or mistake)
-# - Conflicts require manual resolution (alerts via log + optional Telegram)
+# - Conflicts require manual resolution (alerts via log)
 # - Log rotation (max 10MB)
 #
 # Usage:
@@ -47,10 +47,6 @@ log() {
 
 alert() {
     log "ALERT: $1"
-    # Optional: Send Telegram notification if configured
-    if [ -f "$HOME/.claude/.telegram-config.json" ] && command -v bun &>/dev/null; then
-        bun run "$HOME/.claude/hooks/telegram-bun/index.ts" send "🔴 Obsidian Sync: $1" 2>/dev/null || true
-    fi
 }
 
 # ============================================================================

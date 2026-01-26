@@ -52,37 +52,6 @@ if (Test-Path "settings.template.json") {
     Write-Host "settings.json generated" -ForegroundColor Green
 }
 
-# Update slash commands
-Write-Host "Updating slash commands..." -ForegroundColor Cyan
-
-$telegramMd = @"
-Start Telegram integration for this Claude Code session.
-
-This starts the listener (if not already running) and registers your session with a unique ID (like ``A3X``).
-
-``````bash
-$BunPathForward run $ClaudeHomeForward/hooks/telegram-bun/index.ts start-listener
-``````
-
-``````bash
-$BunPathForward run $ClaudeHomeForward/hooks/telegram-bun/index.ts register "`$1"
-``````
-
-Use ``/telegram-end`` when done. Send ``/ping`` via Telegram to check if listener is alive.
-"@
-$telegramMd | Set-Content "commands/telegram.md" -Encoding UTF8
-
-$telegramEndMd = @"
-End Telegram integration for this session.
-
-``````bash
-$BunPathForward run $ClaudeHomeForward/hooks/telegram-bun/index.ts unregister
-``````
-"@
-$telegramEndMd | Set-Content "commands/telegram-end.md" -Encoding UTF8
-
-Write-Host "Slash commands updated" -ForegroundColor Green
-
 # Generate vault commands from templates
 Write-Host "Generating vault commands..." -ForegroundColor Cyan
 $vaultTemplates = Get-ChildItem "commands/vault*.template.md" -ErrorAction SilentlyContinue
@@ -95,18 +64,9 @@ foreach ($template in $vaultTemplates) {
 }
 Write-Host "Vault commands generated" -ForegroundColor Green
 
-# Install bun dependencies
-if (Test-Path "hooks/telegram-bun/package.json") {
-    Write-Host "Installing telegram-bun dependencies..." -ForegroundColor Cyan
-    Push-Location "hooks/telegram-bun"
-    & $BunPath install
-    Pop-Location
-}
-
 Write-Host ""
 Write-Host "Setup complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
-Write-Host "  1. Configure Telegram (see CLAUDE.md)"
-Write-Host "  2. Restart Claude Code"
-Write-Host "  3. Use /telegram to start integration"
+Write-Host "  1. Restart Claude Code"
+Write-Host "  2. Use /aipeerreview for AI peer reviews"
