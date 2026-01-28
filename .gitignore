@@ -22,6 +22,10 @@ projects/
 # Credentials
 .credentials.json
 
+# Endpoint-specific settings (generated from templates)
+settings.json
+secrets.json
+
 # Local settings (machine-specific permissions etc)
 settings.local.json
 .claude/settings.local.json
