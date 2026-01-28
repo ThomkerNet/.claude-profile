@@ -26,6 +26,60 @@
       "name": "sequential-thinking",
       "command": "npx -y @modelcontextprotocol/server-sequential-thinking",
       "description": "Step-by-step problem solving"
+    },
+    {
+      "name": "tkn-cloudflare",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8200/sse",
+      "description": "Cloudflare DNS and zone management (TKNet homelab)"
+    },
+    {
+      "name": "tkn-unraid",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8201/sse",
+      "description": "Unraid server management (array, containers, VMs, notifications)"
+    },
+    {
+      "name": "tkn-aipeerreview",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8202/sse",
+      "description": "Multi-model AI code review via LiteLLM proxy"
+    },
+    {
+      "name": "tkn-unifi",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8203/sse",
+      "description": "UniFi network management (devices, clients, networks)"
+    },
+    {
+      "name": "tkn-portainer",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8205/sse",
+      "description": "Docker infrastructure management via Portainer API"
+    },
+    {
+      "name": "tkn-tailscale",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8206/sse",
+      "description": "Tailscale VPN management (devices, DNS, ACLs, keys)"
+    },
+    {
+      "name": "tkn-syncthing",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8208/sse",
+      "description": "Syncthing file sync management (folders, devices, stats)"
+    },
+    {
+      "name": "tkn-registry",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8209/sse",
+      "description": "Local Docker registry management (catalog, tags, images)"
+    },
+    {
+      "name": "tkn-infisical",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8210/sse",
+      "description": "Infisical secrets management (projects, folders, secrets)"
     }
   ]
 }

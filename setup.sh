@@ -818,7 +818,7 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
 
     jq -c '.servers[]' "$REPO_DIR/mcp-servers.json" 2>/dev/null | while IFS= read -r row; do
         name=$(echo "$row" | jq -r '.name')
-        cmd=$(echo "$row" | jq -r '.command')
+        transport=$(echo "$row" | jq -r '.transport // "stdio"')
 
         # Check if already installed
         if echo "$INSTALLED_SERVERS" | grep -q "^${name}$"; then
@@ -826,26 +826,38 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
             continue
         fi
 
-        # Build env args
-        env_args=""
-        if echo "$row" | jq -e '.env' >/dev/null 2>&1; then
-            while IFS='=' read -r key value; do
-                [ -z "$key" ] && continue
-                value=$(echo "$value" | sed -e "s|{{CLAUDE_HOME}}|$CLAUDE_HOME|g" \
-                                            -e "s|{{REPO_DIR}}|$REPO_DIR|g" \
-                                            -e "s|{{HOME}}|$HOME|g" \
-                                            -e "s|{{BUN_PATH}}|$BUN_PATH|g")
-                # Skip if placeholder not resolved
-                echo "$value" | grep -q '{{' && continue
-                env_args="$env_args -e $key=$value"
-            done < <(echo "$row" | jq -r '.env | to_entries[] | "\(.key)=\(.value)"')
-        fi
-
-        # Install MCP server (--scope user for user-level config)
-        if eval "claude mcp add \"$name\" --transport stdio --scope user $env_args -- $cmd" &>/dev/null; then
-            dsc_changed "mcp:$name (added)"
+        if [ "$transport" = "sse" ]; then
+            # SSE transport: connect to remote URL
+            url=$(echo "$row" | jq -r '.url')
+            if eval "claude mcp add \"$name\" --transport sse --scope user \"$url\"" &>/dev/null; then
+                dsc_changed "mcp:$name (added, sse)"
+            else
+                dsc_failed "mcp:$name"
+            fi
         else
-            dsc_failed "mcp:$name"
+            # stdio transport: spawn local process
+            cmd=$(echo "$row" | jq -r '.command')
+
+            # Build env args
+            env_args=""
+            if echo "$row" | jq -e '.env' >/dev/null 2>&1; then
+                while IFS='=' read -r key value; do
+                    [ -z "$key" ] && continue
+                    value=$(echo "$value" | sed -e "s|{{CLAUDE_HOME}}|$CLAUDE_HOME|g" \
+                                                -e "s|{{REPO_DIR}}|$REPO_DIR|g" \
+                                                -e "s|{{HOME}}|$HOME|g" \
+                                                -e "s|{{BUN_PATH}}|$BUN_PATH|g")
+                    # Skip if placeholder not resolved
+                    echo "$value" | grep -q '{{' && continue
+                    env_args="$env_args -e $key=$value"
+                done < <(echo "$row" | jq -r '.env | to_entries[] | "\(.key)=\(.value)"')
+            fi
+
+            if eval "claude mcp add \"$name\" --transport stdio --scope user $env_args -- $cmd" &>/dev/null; then
+                dsc_changed "mcp:$name (added)"
+            else
+                dsc_failed "mcp:$name"
+            fi
         fi
     done
 else
