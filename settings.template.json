@@ -5,22 +5,12 @@
     "command": "{{STATUSLINE_PATH}}"
   },
   "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/spec-poller/index.ts"
-          }
-        ]
-      }
-    ],
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "{{BUN_PATH}} run {{CLAUDE_HOME}}/hooks/spec-checker/index.ts"
+            "command": "bun run {{CLAUDE_HOME}}/hooks/spec-checker/index.ts"
           }
         ]
       }

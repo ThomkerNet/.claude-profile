@@ -291,7 +291,7 @@ ensure_symlink() {
     # Test: Does source exist?
     if [ ! -e "$source" ]; then
         dsc_skipped "symlink:$desc (source missing: $source)"
-        return 1
+        return 0  # Skipped is not a failure - don't abort script with set -e
     fi
 
     # Test: Is symlink correct?
@@ -360,7 +360,7 @@ ensure_file_copy() {
     # Test: Does source exist?
     if [ ! -f "$source" ]; then
         dsc_skipped "file:$desc (source missing)"
-        return 1
+        return 0  # Skipped is not a failure
     fi
 
     # Test: Are files identical?
@@ -397,7 +397,7 @@ ensure_file_template() {
     # Test: Does source exist?
     if [ ! -f "$source" ]; then
         dsc_skipped "template:$desc (source missing)"
-        return 1
+        return 0  # Skipped is not a failure
     fi
 
     # Build sed expression from substitutions
@@ -486,7 +486,7 @@ ensure_service() {
         ensure_systemd_service "$name" "$source"
     else
         dsc_skipped "service:$name (unsupported platform)"
-        return 1
+        return 0  # Skipped is not a failure
     fi
 }
 

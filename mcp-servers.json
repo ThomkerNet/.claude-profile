@@ -1,5 +1,6 @@
 {
-  "description": "MCP servers to install. Run setup script to configure these.",
+  "$schema": "MCP server definitions for setup.sh",
+  "description": "MCP servers to install. Fields: name (required), command (stdio), url (sse), transport (stdio|sse), scope (user|project, default: user), env (object), description (string)",
   "servers": [
     {
       "name": "memory",
