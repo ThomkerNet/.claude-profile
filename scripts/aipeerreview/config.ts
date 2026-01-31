@@ -106,11 +106,6 @@ export const ALL_MODELS: Record<string, ModelConfig> = {
     description: "Fast Gemini model for quick tasks",
     strengths: ["fast", "general"],
   },
-  "deepseek-r1": {
-    name: "DeepSeek R1",
-    description: "Local reasoning model, strong at logic",
-    strengths: ["reasoning", "logic", "local", "bug-detection"],
-  },
 };
 
 /**
@@ -118,7 +113,7 @@ export const ALL_MODELS: Record<string, ModelConfig> = {
  */
 export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
   security: {
-    models: ["gpt-5.1", "gemini-3-pro-preview", "deepseek-r1"],
+    models: ["gpt-5.1", "gemini-3-pro-preview", "gemini-2.5-pro"],
     focusAreas: [
       "Injection vulnerabilities (SQL, XSS, command injection)",
       "Authentication and authorization flaws",
@@ -140,7 +135,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   bug: {
-    models: ["gpt-5.1", "deepseek-r1", "gemini-2.5-pro"],
+    models: ["gpt-5.1", "gemini-3-pro-preview", "gemini-2.5-pro"],
     focusAreas: [
       "Logic errors and edge cases",
       "Race conditions and concurrency issues",
@@ -151,7 +146,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   performance: {
-    models: ["gpt-5", "gemini-3-pro-preview", "deepseek-r1"],
+    models: ["gpt-5", "gemini-3-pro-preview", "gemini-2.5-pro"],
     focusAreas: [
       "Algorithm complexity (time/space)",
       "Database query optimization",
@@ -173,7 +168,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   test: {
-    models: ["gpt-5.1", "gemini-2.5-pro", "deepseek-r1"],
+    models: ["gpt-5.1", "gemini-2.5-pro", "gemini-2.5-flash"],
     focusAreas: [
       "Test coverage gaps",
       "Edge case coverage",
