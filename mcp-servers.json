@@ -35,6 +35,12 @@
       "description": "Cloudflare DNS and zone management (TKNet homelab)"
     },
     {
+      "name": "bnx-cloudflare",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8100/sse",
+      "description": "Cloudflare DNS and zone management (BoroughNexus business)"
+    },
+    {
       "name": "tkn-unraid",
       "transport": "sse",
       "url": "http://10.0.0.2:8201/sse",
