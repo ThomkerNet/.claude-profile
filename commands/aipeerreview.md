@@ -2,7 +2,7 @@
 
 > **Description:** Smart multi-model code review via LiteLLM proxy
 
-**Invoke:** bun run $HOME/.claude/scripts/aipeerreview/index.ts
+**Invoke:** bun run ~/.claude/scripts/aipeerreview/index.ts
 
 ## Usage
 

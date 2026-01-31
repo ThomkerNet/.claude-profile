@@ -2,7 +2,7 @@
 
 > **Description:** Automatically commit, push, and document recent work
 
-**Invoke:** bun run $HOME/.claude/scripts/z/index.ts
+**Invoke:** bun run ~/.claude/scripts/z/index.ts
 
 ## Usage
 
