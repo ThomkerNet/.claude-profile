@@ -8,7 +8,7 @@ description: Obsidian vault structure and PARA organization. Load when working w
 ## Vault Location
 
 ```
-~/Obsidian/Simon-Personal/
+~/personal-obsidian/
 ```
 
 ## Access Method
@@ -17,13 +17,13 @@ Direct file operations - no MCP or REST API needed.
 
 ```bash
 # Read note
-Read ~/Obsidian/Simon-Personal/Projects/BriefHours/Index.md
+Read ~/personal-obsidian/Projects/BriefHours/Index.md
 
 # Search notes
-Grep "search term" ~/Obsidian/Simon-Personal/
+Grep "search term" ~/personal-obsidian/
 
 # Find notes
-Glob "**/*.md" ~/Obsidian/Simon-Personal/Projects/
+Glob "**/*.md" ~/personal-obsidian/Projects/
 ```
 
 ---
@@ -98,9 +98,9 @@ Sensitive content in `Areas/Personal/` uses **Meld Encrypt** plugin.
 
 ## Sync
 
-- **Obsidian Sync** (paid) syncs across iOS/Mac/Windows
+- **Git repo** with auto-sync across machines
 - Changes made via Claude are synced automatically
-- No conflict resolution needed for direct file edits
+- Also uses Obsidian Sync for iOS/Mac/Windows
 
 ---
 
@@ -119,19 +119,19 @@ Sensitive content in `Areas/Personal/` uses **Meld Encrypt** plugin.
 ### Create new project note
 
 ```bash
-Write ~/Obsidian/Simon-Personal/Projects/NewProject/Index.md
+Write ~/personal-obsidian/Projects/NewProject/Index.md
 ```
 
 ### Find all notes mentioning topic
 
 ```bash
-Grep "BriefHours" ~/Obsidian/Simon-Personal/ --type md
+Grep "BriefHours" ~/personal-obsidian/ --type md
 ```
 
 ### List recent notes
 
 ```bash
-Glob "**/*.md" ~/Obsidian/Simon-Personal/Projects/ | head -20
+Glob "**/*.md" ~/personal-obsidian/Projects/ | head -20
 ```
 
 ---
