@@ -21,11 +21,11 @@
 | Type | Models | Best For |
 |------|--------|----------|
 | **security** | GPT-5.1, Gemini 3 Pro, Gemini 2.5 Pro | Auth, injection, OWASP vulnerabilities |
-| **architecture** | Gemini 3 Pro, GPT-5.1, Gemini 2.5 Pro | Design patterns, scalability, coupling |
-| **bug** | GPT-5.1, Gemini 3 Pro, Gemini 2.5 Pro | Logic errors, edge cases, race conditions |
-| **performance** | GPT-5, Gemini 3 Pro, Gemini 2.5 Pro | Complexity, optimization, bottlenecks |
+| **architecture** | GPT-5.2, Gemini 3 Pro, Gemini 2.5 Pro | Design patterns, scalability, coupling |
+| **bug** | GPT-5.2, Gemini 3 Pro, Gemini 2.5 Pro | Logic errors, edge cases, race conditions |
+| **performance** | GPT-5.2, Gemini 3 Pro, Gemini 2.5 Pro | Complexity, optimization, bottlenecks |
 | **api** | GPT-5.1, Gemini 3 Pro, Gemini 2.5 Pro | REST design, contracts, versioning |
-| **test** | GPT-5.1, Gemini 2.5 Pro, Gemini 2.5 Flash | Coverage gaps, mocking, assertions |
+| **test** | GPT-5.1 Codex, Gemini 2.5 Pro, Gemini 3 Flash | Coverage gaps, mocking, assertions |
 | **general** | GPT-5.1, Gemini 3 Pro, Gemini 2.5 Pro | Broad code quality assessment |
 
 ## Examples
@@ -48,12 +48,12 @@ Uses direct HTTP calls to **LiteLLM proxy** for multi-model access:
 
 | Model | Provider | Use Case |
 |-------|----------|----------|
-| GPT-5.1 | OpenAI (Copilot) | General, visual reasoning, security |
-| GPT-5 | OpenAI (Copilot) | Coding, reasoning, performance |
-| GPT-5 Mini | OpenAI (Copilot) | Fast, cost-effective |
-| Gemini 3 Pro | Google API | Academic, architecture, complex reasoning |
-| Gemini 2.5 Pro | Google API | Reasoning, code analysis |
-| Gemini 2.5 Flash | Google API | Fast tasks |
+| GPT-5.2 | OpenAI (Copilot) | Complex analysis, debugging, architecture |
+| GPT-5.1 | OpenAI (Copilot) | General, visual reasoning, security, API design |
+| GPT-5.1 Codex | OpenAI (Copilot) | Code engineering, refactoring, test coverage |
+| Gemini 3 Pro | Google API | Long-context reasoning, architecture |
+| Gemini 3 Flash | Google API | Fast reviews, repetitive checks |
+| Gemini 2.5 Pro | Google API | Code analysis, bug detection |
 
 > **Note:** Claude models are accessed directly via Claude Code, not through LiteLLM. Gemini models route through Google API to reduce Copilot usage.
 

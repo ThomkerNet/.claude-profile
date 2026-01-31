@@ -73,47 +73,61 @@ export function getLLMClientConfig(): LLMClientConfig {
 
 /**
  * All available models via LiteLLM proxy
- * Claude models excluded - use Claude Code directly for Claude reviews
+ *
+ * Provider routing:
+ * - GPT models: OpenAI via Copilot
+ * - Gemini models: Google API (reduces Copilot usage)
+ * - Claude models: Use Claude Code directly, not through this proxy
  */
 export const ALL_MODELS: Record<string, ModelConfig> = {
+  // OpenAI models via Copilot
+  "gpt-5.2": {
+    name: "GPT-5.2",
+    description: "Complex analysis, decision-making, debugging",
+    strengths: ["analysis", "debugging", "architecture", "decision-making"],
+  },
   "gpt-5.1": {
     name: "GPT-5.1",
     description: "Visual reasoning, general purpose, adaptive",
     strengths: ["visual", "general", "api-design", "documentation", "security"],
   },
-  "gpt-5": {
-    name: "GPT-5",
-    description: "Strong general reasoning and coding",
-    strengths: ["general", "coding", "reasoning", "performance"],
+  "gpt-5.1-codex": {
+    name: "GPT-5.1 Codex",
+    description: "Specialized for code engineering tasks",
+    strengths: ["code", "engineering", "completions", "refactoring"],
   },
-  "gpt-5-mini": {
-    name: "GPT-5 Mini",
-    description: "Fast, cost-effective GPT model",
-    strengths: ["fast", "cost-effective"],
-  },
-  "gemini-3-pro-preview": {
+  // Gemini models via Google API
+  "gemini-3-pro": {
     name: "Gemini 3 Pro",
-    description: "Graduate-level reasoning, academic knowledge, multilingual",
-    strengths: ["academic", "architecture", "security-theory", "multilingual", "complex-reasoning"],
+    description: "Advanced reasoning across long contexts",
+    strengths: ["reasoning", "architecture", "long-context", "multimodal"],
+  },
+  "gemini-3-flash": {
+    name: "Gemini 3 Flash",
+    description: "Quick responses for repetitive work",
+    strengths: ["fast", "lightweight", "repetitive"],
   },
   "gemini-2.5-pro": {
     name: "Gemini 2.5 Pro",
     description: "Strong reasoning and code understanding",
     strengths: ["reasoning", "code", "analysis", "bug-detection"],
   },
-  "gemini-2.5-flash": {
-    name: "Gemini 2.5 Flash",
-    description: "Fast Gemini model for quick tasks",
-    strengths: ["fast", "general"],
-  },
 };
 
 /**
  * Review types with optimal model selection (3 models each)
+ *
+ * Model selection rationale:
+ * - GPT-5.2: Complex analysis, debugging, architecture decisions
+ * - GPT-5.1: General purpose, security, API design
+ * - GPT-5.1-Codex: Code-specific tasks, refactoring, test coverage
+ * - Gemini 3 Pro: Long-context reasoning, architecture
+ * - Gemini 3 Flash: Fast reviews, repetitive checks
+ * - Gemini 2.5 Pro: Code analysis, bug detection
  */
 export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
   security: {
-    models: ["gpt-5.1", "gemini-3-pro-preview", "gemini-2.5-pro"],
+    models: ["gpt-5.1", "gemini-3-pro", "gemini-2.5-pro"],
     focusAreas: [
       "Injection vulnerabilities (SQL, XSS, command injection)",
       "Authentication and authorization flaws",
@@ -124,7 +138,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   architecture: {
-    models: ["gemini-3-pro-preview", "gpt-5.1", "gemini-2.5-pro"],
+    models: ["gpt-5.2", "gemini-3-pro", "gemini-2.5-pro"],
     focusAreas: [
       "Design patterns and anti-patterns",
       "Scalability and maintainability",
@@ -135,7 +149,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   bug: {
-    models: ["gpt-5.1", "gemini-3-pro-preview", "gemini-2.5-pro"],
+    models: ["gpt-5.2", "gemini-3-pro", "gemini-2.5-pro"],
     focusAreas: [
       "Logic errors and edge cases",
       "Race conditions and concurrency issues",
@@ -146,7 +160,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   performance: {
-    models: ["gpt-5", "gemini-3-pro-preview", "gemini-2.5-pro"],
+    models: ["gpt-5.2", "gemini-3-pro", "gemini-2.5-pro"],
     focusAreas: [
       "Algorithm complexity (time/space)",
       "Database query optimization",
@@ -157,7 +171,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   api: {
-    models: ["gpt-5.1", "gemini-3-pro-preview", "gemini-2.5-pro"],
+    models: ["gpt-5.1", "gemini-3-pro", "gemini-2.5-pro"],
     focusAreas: [
       "API design and RESTful principles",
       "Contract clarity and documentation",
@@ -168,7 +182,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   test: {
-    models: ["gpt-5.1", "gemini-2.5-pro", "gemini-2.5-flash"],
+    models: ["gpt-5.1-codex", "gemini-2.5-pro", "gemini-3-flash"],
     focusAreas: [
       "Test coverage gaps",
       "Edge case coverage",
@@ -179,7 +193,7 @@ export const REVIEW_TYPE_MODELS: Record<string, ReviewTypeConfig> = {
     ],
   },
   general: {
-    models: ["gpt-5.1", "gemini-3-pro-preview", "gemini-2.5-pro"],
+    models: ["gpt-5.1", "gemini-3-pro", "gemini-2.5-pro"],
     focusAreas: [
       "Code architecture and design",
       "Security implications",
