@@ -58,6 +58,34 @@ gh auth switch --user <ample-engineer|boroughnexus-cto>
 
 ---
 
+## Obsidian Vault
+
+**Location:** `~/personal-obsidian/` (git repo, auto-syncs)
+
+**Access method:** Direct file operations - Read, Write, Edit, Grep, Glob
+
+```bash
+# Read a note
+Read ~/personal-obsidian/Projects/BoroughNexus/Index.md
+
+# Search for content
+Grep "search term" ~/personal-obsidian/
+
+# Find notes
+Glob "**/*.md" ~/personal-obsidian/Projects/
+```
+
+**Structure:** PARA method - `Projects/`, `Areas/`, `Resources/`, `Archive/`
+
+**Key folders:**
+- `Projects/BoroughNexus/AI-Claude/` - Claude tooling docs
+- `Projects/BriefHours/` - BriefHours product
+- `Projects/TKN/` - Homelab/personal
+
+**When documenting:** Use `[[WikiLinks]]` for cross-references, append to existing notes when possible.
+
+---
+
 ## Reference Skills (load as needed)
 
 | Skill | Content |
@@ -65,7 +93,7 @@ gh auth switch --user <ample-engineer|boroughnexus-cto>
 | `/profile-reference` | MCP servers, router, statusline |
 | `/todoist-ref` | API examples, project IDs |
 | `/bw-ref` | Two-vault architecture, credential access |
-| `/obsidian-ref` | Vault structure, PARA organization |
+| `/obsidian-ref` | Full vault structure, PARA details |
 
 ---
 
@@ -74,7 +102,6 @@ gh auth switch --user <ample-engineer|boroughnexus-cto>
 | Item | Value |
 |------|-------|
 | Profile repo | `~/.claude-profile/` (git) → `~/.claude/` (symlinks) |
-| Obsidian vault | `~/personal-obsidian/` (git repo, auto-syncs) |
 | Homelab docs | `~/git-bnx/TKN/TKNet-Homelab-Docs/` |
 | "ppp" | Puppeteer |
 
