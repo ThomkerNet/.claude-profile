@@ -105,11 +105,47 @@ Based on failure type, attempt automatic fix:
 
 | Failure Type | Auto-Fix Strategy |
 |--------------|-------------------|
+| **ruff format** | Run `ruff format <files>` locally to fix formatting |
+| **ruff check** | Run `ruff check --fix <files>` to auto-fix lint issues |
 | **Test failure** | Read failing test, analyze assertion, fix code or test |
-| **Lint error** | Run linter locally, apply fixes |
 | **Type error** | Read error, fix type issues |
 | **Build error** | Analyze build output, fix imports/syntax |
 | **Dependency issue** | Update lockfile, check versions |
+
+#### Auto-Fix: Ruff Format Errors
+
+If the failure log contains "Would reformat:" entries from `ruff format --check`:
+
+```bash
+# Extract files that need formatting from CI logs
+# Look for lines like: "Would reformat: servers/tkn-azure/server.py"
+
+# Run ruff format on affected files
+ruff format <file1> <file2> ...
+
+# Or format entire directories
+ruff format servers/ tests/
+```
+
+#### Auto-Fix: Ruff Lint Errors
+
+If the failure log contains ruff check errors (F401, E501, etc.):
+
+```bash
+# Run ruff with auto-fix
+ruff check --fix servers/ tests/
+
+# For unfixable issues, read the error and fix manually
+```
+
+#### Auto-Fix: Other Lint/Format Tools
+
+| Tool | Command |
+|------|---------|
+| **black** | `black <files>` |
+| **prettier** | `prettier --write <files>` |
+| **eslint** | `eslint --fix <files>` |
+| **isort** | `isort <files>` |
 
 ```bash
 # After fixing, commit and push
@@ -260,6 +296,31 @@ The workflow will attempt:
 ### Timeout
 
 If watching pipeline for more than 15 minutes, provide status update and ask if user wants to continue waiting.
+
+---
+
+## Quick Detection: Common CI Failure Patterns
+
+When analyzing `gh run view --log-failed`, look for these patterns:
+
+| Log Pattern | Failure Type | Auto-Fix Command |
+|-------------|--------------|------------------|
+| `Would reformat:` | ruff format | `ruff format <files>` |
+| `F401 [*]` imported but unused | ruff lint | `ruff check --fix` |
+| `E501` line too long | ruff lint | `ruff check --fix` or manual |
+| `error: Process completed with exit code 1` + lint step | Formatting/lint | Check which linter failed |
+| `FAILED tests/` | pytest failure | Read test, fix code |
+| `ModuleNotFoundError` | Missing dependency | `pip install` or update requirements |
+| `SyntaxError` | Python syntax | Fix the syntax error |
+| `TypeScript error TS` | Type error | Fix type annotations |
+
+### Priority Order for Fixes
+
+1. **Formatting issues** - Always fix first (ruff format, black, prettier)
+2. **Lint issues** - Fix auto-fixable ones, then manual
+3. **Type errors** - Usually straightforward to fix
+4. **Test failures** - May need deeper analysis
+5. **Build errors** - Check imports, dependencies
 
 ---
 
