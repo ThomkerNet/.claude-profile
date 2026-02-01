@@ -110,6 +110,7 @@ Load with `/<skill-name>`:
 | `/aipeerreview` | Multi-model code review (security, architecture, bugs) |
 | `/z` | Zero-friction commit with AI-generated messages |
 | `/imagen` | Generate images via Google Gemini |
+| `/zupdatetknmcpservers` | Sync deployed TKN MCP servers to claude-profile config |
 
 ---
 
