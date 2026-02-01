@@ -165,6 +165,12 @@
       "transport": "sse",
       "url": "http://10.0.0.2:8220/sse",
       "description": "Webshare.io proxy management"
+    },
+    {
+      "name": "tkn-googleworkspace",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8221/sse",
+      "description": "Google Workspace management (TKNet homelab)"
     }
   ]
 }
