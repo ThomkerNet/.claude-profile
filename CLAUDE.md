@@ -1,115 +1,215 @@
-## Claude Profile
+# Claude Profile
 
-Load `/profile-reference` for detailed docs on any feature.
+> **Quick Start:** This profile manages context for BoroughNexus, BriefHours, and homelab projects.
+
+Load `/profile-reference` for detailed docs on MCP servers, router, and statusline features.
+
+---
+
+## Navigation
+
+### Policies (Must Follow)
+
+| File | Purpose |
+|------|---------|
+| [SECURITY.md](policies/SECURITY.md) | Credential management, secrets handling, security best practices |
+| [DEPLOYMENT.md](policies/DEPLOYMENT.md) | Pre-deployment requirements, deployment gating, rollback procedures |
+| [COUPLING.md](policies/COUPLING.md) | Repository dependencies, shared code patterns, interface contracts |
+
+### Architecture (How Things Work)
+
+| File | Purpose |
+|------|---------|
+| [INFRASTRUCTURE.md](architecture/INFRASTRUCTURE.md) | Cloud environments, hosting platforms, infrastructure decisions |
+| [TOPOLOGY.md](architecture/TOPOLOGY.md) | Repository organization, project relationships, directory structure |
+
+### Operations (Day-to-Day)
+
+| File | Purpose |
+|------|---------|
+| [RUNBOOK.md](operations/RUNBOOK.md) | Common commands, workflows, troubleshooting procedures |
+| [OBSIDIAN.md](operations/OBSIDIAN.md) | Knowledge management, note-taking, vault structure |
+
+### Reference (Quick Lookup)
+
+| File | Purpose |
+|------|---------|
+| [QUICK_REF.md](reference/QUICK_REF.md) | Paths, contacts, shortcuts, frequently needed information |
 
 ---
 
 ## Critical Rules
 
-1. **Before deploying:** Read `DEPLOYMENT.md` or `ARCHITECTURE.md` in project/parent dirs, or ask
-2. **Before creating patterns:** Check sibling repos first (same org = tightly coupled)
-3. **Never** change system passwords without explicit instruction
-4. **Credentials:** Use `/bw-ref` for vault architecture, never hardcode secrets
+**These are ALWAYS enforced:**
+
+1. **Never** change system passwords without explicit instruction
+2. **Never** hardcode secrets → Use Bitwarden (see [SECURITY.md](policies/SECURITY.md))
+3. **Before deploying:** Check for DEPLOYMENT.md in project root, or ask user
+4. **Before cross-repo imports:** Review [COUPLING.md](policies/COUPLING.md) for proper patterns
 
 ---
 
-## Infrastructure
+## Quick Context
 
-| Domain | Stack |
-|--------|-------|
-| **BriefHours** | Azure UK South (Container Apps, PostgreSQL Flexible, Azure OpenAI) |
-| **Other projects** | Mac Mini cluster, Cloudflare Tunnels, self-hosted PostgreSQL, Docker |
-| **NOT** | Vercel, AWS, cloud PaaS (unless project-specific) |
-
----
-
-## Repository Structure
+### Repository Structure
 
 ```
 ~/git-bnx/
-├── TKN/          # Personal/homelab (unrelated to work)
-├── BNX/          # BoroughNexus company
+├── TKN/          # Personal/homelab (independent from work)
+├── BNX/          # BoroughNexus company projects
 └── BriefHours/   # BriefHours product (cousin of BNX)
 ```
 
-**Coupling:** Siblings (same org) = tightly coupled. Cousins (BNX↔BriefHours) = may diverge.
+**Relationships:**
+- **TKN ↔ BNX/BriefHours:** No shared code
+- **BNX ↔ BriefHours:** Cousins - may share patterns, but codebases diverge
+- **BNX siblings:** Share code via versioned packages only
+
+See [TOPOLOGY.md](architecture/TOPOLOGY.md) for details.
 
 ---
 
-## GitHub Accounts
+### Infrastructure Summary
 
-If push fails "repository not found":
-```bash
-gh auth switch --user <ample-engineer|boroughnexus-cto>
+| Project | Platform | Database | Deployment |
+|---------|----------|----------|------------|
+| **BriefHours** | Azure UK South | PostgreSQL Flexible | Container Apps |
+| **BNX/Other** | Homelab (Mac Mini) | Self-hosted PostgreSQL | Docker Compose |
+
+See [INFRASTRUCTURE.md](architecture/INFRASTRUCTURE.md) for details.
+
+---
+
+### Git Configuration
+
+**Single account for all projects:** `boroughnexus-cto`
+
+```ini
+[user]
+  name = Simon Barker
+  email = simon@boroughnexus.com
+[github]
+  user = boroughnexus-cto
 ```
 
-| Account | Use |
-|---------|-----|
-| `ample-engineer` | Personal, ~/.claude profile |
-| `boroughnexus-cto` | Work projects |
+No account switching needed (simplified from previous multi-account setup).
 
 ---
 
-## Memory
+## Skills (Load as Needed)
 
-**Store on:** "I prefer", "always", "never", "remember", architecture decisions, corrections
+Load with `/<skill-name>`:
 
-**Session start:** `search_nodes("user")` and `search_nodes("<project>")`
+| Skill | Content |
+|-------|---------|
+| `/profile-reference` | MCP servers, router, statusline (Claude profile features) |
+| `/bw-ref` | Bitwarden two-vault architecture, credential access |
+| `/obsidian-ref` | Full vault structure, PARA method details |
+| `/todoist-ref` | Todoist API examples, project IDs |
+| `/ultrathink` | Extended reasoning for complex problems |
+| `/aipeerreview` | Multi-model code review (security, architecture, bugs) |
+| `/z` | Zero-friction commit with AI-generated messages |
+| `/imagen` | Generate images via Google Gemini |
+
+---
+
+## Memory (MCP Server)
+
+**Store in memory:**
+- User preferences: "I prefer X", "always do Y", "never do Z"
+- Architecture decisions and patterns
+- Corrections and learnings
+
+**Session start queries:**
+```typescript
+search_nodes("user")              // Load personal preferences
+search_nodes("BoroughNexus")      // If working in BNX project
+search_nodes("BriefHours")        // If working in BriefHours project
+```
 
 ---
 
 ## Obsidian Vault
 
-**Location:** `~/personal-obsidian/` (git repo, auto-syncs)
+**Location:** `~/personal-obsidian/` (git-backed, auto-syncs)
 
-**Access method:** Direct file operations - Read, Write, Edit, Grep, Glob
-
-```bash
-# Read a note
-Read ~/personal-obsidian/Projects/BoroughNexus/Index.md
-
-# Search for content
-Grep "search term" ~/personal-obsidian/
-
-# Find notes
-Glob "**/*.md" ~/personal-obsidian/Projects/
-```
+**Access:** Direct file operations (Read, Write, Edit, Grep, Glob)
 
 **Structure:** PARA method - `Projects/`, `Areas/`, `Resources/`, `Archive/`
 
 **Key folders:**
-- `Projects/BoroughNexus/AI-Claude/` - Claude tooling docs
-- `Projects/BriefHours/` - BriefHours product
-- `Projects/TKN/` - Homelab/personal
+- `Projects/BoroughNexus/AI-Claude/` - Claude tooling documentation
+- `Projects/BriefHours/` - BriefHours product notes
+- `Projects/TKN/` - Homelab and personal projects
 
-**When documenting:** Use `[[WikiLinks]]` for cross-references, append to existing notes when possible.
+**Best practice:** Scope searches to specific projects to avoid context leakage.
 
----
-
-## Reference Skills (load as needed)
-
-| Skill | Content |
-|-------|---------|
-| `/profile-reference` | MCP servers, router, statusline |
-| `/todoist-ref` | API examples, project IDs |
-| `/bw-ref` | Two-vault architecture, credential access |
-| `/obsidian-ref` | Full vault structure, PARA details |
+See [OBSIDIAN.md](operations/OBSIDIAN.md) for detailed usage.
 
 ---
 
 ## Quick Reference
 
-| Item | Value |
-|------|-------|
-| Profile repo | `~/.claude-profile/` (git) → `~/.claude/` (symlinks) |
-| Homelab docs | `~/git-bnx/TKN/TKNet-Homelab-Docs/` |
-| "ppp" | Puppeteer |
+| Item | Path |
+|------|------|
+| **Claude profile repo** | `~/.claude-profile/` (git) → `~/.claude/` (symlinks) |
+| **Git repositories** | `~/git-bnx/` |
+| **Homelab documentation** | `~/git-bnx/TKN/TKNet-Homelab-Docs/` |
+| **Obsidian vault** | `~/personal-obsidian/` |
+
+| Person | Role | Email |
+|--------|------|-------|
+| **Simon** | User, Developer | simonbarker@gmail.com |
+| **Charlotte** | Partner, Co-runs BNX | (ask if needed) |
+
+See [QUICK_REF.md](reference/QUICK_REF.md) for more shortcuts and paths.
 
 ---
 
-## Contacts
+## Common Tasks
 
-| Person | Role |
-|--------|------|
-| Simon | User (simonbarker@gmail.com) |
-| Charlotte | Partner, co-runs BNX |
+### Start Working on a Project
+
+1. Navigate to project: `cd ~/git-bnx/BNX/project-name`
+2. Check git status: `git status`
+3. Load project context from memory: `search_nodes("project-name")`
+4. Review project's README, DEPLOYMENT.md, ARCHITECTURE.md if they exist
+
+### Deploy Changes
+
+1. **Read** project's `DEPLOYMENT.md` or ask user
+2. Run tests, linting
+3. Follow environment-specific procedures (see [DEPLOYMENT.md](policies/DEPLOYMENT.md))
+4. Verify deployment with health checks
+
+### Manage Credentials
+
+1. **Never** hardcode secrets
+2. Load credential from Bitwarden (use `/bw-ref` for architecture)
+3. Use environment variables in code
+4. See [SECURITY.md](policies/SECURITY.md) for complete procedures
+
+### Share Code Between BNX Projects
+
+1. Extract to shared library: `~/git-bnx/BNX/shared-{name}/`
+2. Publish as `@boroughnexus/{name}` package
+3. Version using semver
+4. See [COUPLING.md](policies/COUPLING.md) for patterns
+
+---
+
+## Getting Help
+
+- **Claude profile features:** Load `/profile-reference`
+- **General Claude Code help:** Use `/help` command
+- **Report issues:** https://github.com/anthropics/claude-code/issues
+- **Documentation:** See navigation table above
+
+---
+
+## Notes
+
+- **Scratchpad for temp files:** Use session-specific scratchpad directory (not `/tmp`)
+- **Documentation style:** Append to existing docs when possible, create new files sparingly
+- **WikiLinks in Obsidian:** Use `[[Note-Name]]` format for cross-references
+- **Abbreviation:** "ppp" = Puppeteer
