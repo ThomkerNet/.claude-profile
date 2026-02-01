@@ -85,7 +85,7 @@
     {
       "name": "tkn-media",
       "transport": "sse",
-      "url": "http://10.0.0.2:8221/sse",
+      "url": "http://10.0.0.2:8207/sse",
       "description": "Plex, Jellyfin, Tautulli, RDTClient"
     },
     {
