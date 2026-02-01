@@ -20,6 +20,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="${REPO_DIR:-$SCRIPT_DIR}"
 CLAUDE_HOME="$HOME/.claude"
 
+# MCP DSC mode flag
+MCPDSC_MODE=""
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -28,7 +31,18 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Options:"
             echo "  --help, -h              Show this help message"
+            echo "  --mcpdsc <cmd>          MCP DSC operations (list|check|diff|apply-mcp)"
+            echo ""
+            echo "MCP DSC Commands:"
+            echo "  list                    List all defined MCP servers from mcp-servers.json"
+            echo "  check                   Check MCP server state without applying changes"
+            echo "  diff                    Show what changes would be made to MCP servers"
+            echo "  apply-mcp               Apply only the MCP servers step (skip other setup)"
             exit 0
+            ;;
+        --mcpdsc)
+            MCPDSC_MODE="$2"
+            shift 2
             ;;
         *)
             shift
