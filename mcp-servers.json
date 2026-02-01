@@ -59,6 +59,12 @@
       "description": "UniFi network management (devices, clients, networks)"
     },
     {
+      "name": "tkn-haos",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8204/sse",
+      "description": "Home Assistant OS management"
+    },
+    {
       "name": "tkn-portainer",
       "transport": "sse",
       "url": "http://10.0.0.2:8205/sse",
@@ -69,6 +75,12 @@
       "transport": "sse",
       "url": "http://10.0.0.2:8206/sse",
       "description": "Tailscale VPN management (devices, DNS, ACLs, keys)"
+    },
+    {
+      "name": "tkn-media",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8207/sse",
+      "description": "Plex, Jellyfin, Tautulli, RDTClient"
     },
     {
       "name": "tkn-syncthing",
