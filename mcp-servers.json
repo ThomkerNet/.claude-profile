@@ -41,6 +41,12 @@
       "description": "Cloudflare DNS and zone management (BoroughNexus business)"
     },
     {
+      "name": "bnx-googleworkspace",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8102/sse",
+      "description": "Google Workspace management (BoroughNexus business)"
+    },
+    {
       "name": "tkn-unraid",
       "transport": "sse",
       "url": "http://10.0.0.2:8201/sse",

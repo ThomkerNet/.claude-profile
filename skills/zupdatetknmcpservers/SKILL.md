@@ -7,25 +7,52 @@ description: Sync MCP servers from TKNet-MCPServer repo to claude-profile mcp-se
 
 Ensure all deployed MCP servers from `~/git-bnx/TKN/TKNet-MCPServer` are configured in this Claude profile's `mcp-servers.json`.
 
-## Task
+## Task - Fully Dynamic Discovery
 
-1. **Read source of truth** - Read `~/git-bnx/TKN/TKNet-MCPServer/README.md` to get the table of available servers (lines 44-66)
+1. **Find repositories** - Locate MCP server repos
+   - Search for `TKNet-MCPServer` or `TKNet-Docker-Stacks` in `~/git-bnx/TKN/`
+   - Use Glob to find compose.yaml files: `~/git-bnx/TKN/**/compose.yaml`
 
-2. **Read current configuration** - Read `~/.claude-profile/mcp-servers.json` to see what's currently configured
+2. **Parse deployed servers from compose.yaml** - Dynamically extract all uncommented port mappings
+   - Use Grep to find lines matching: `^\s*- "(\d+):(\d+)"\s*#\s*(.+)$`
+   - Extract: port number (left side), server name (from comment after #)
+   - Skip commented lines (starting with #)
+   - Example: `- "8200:8200"  # tkn-cloudflare` → port=8200, name=tkn-cloudflare
 
-3. **Read deployment configuration** - Read `~/git-bnx/TKN/TKNet-MCPServer/compose.yaml` ports section (lines 71-80) to identify which servers are actually deployed/exposed
+3. **Discover descriptions** - Try multiple sources in order:
+   - **Option A:** Parse README.md server table if it exists
+     - Use Grep to find table with format: `| server-name | port | description |`
+     - Match by server NAME (not port)
+   - **Option B:** Query MCP server directly for its description (if running)
+     - Try HTTP GET to `http://10.0.0.2:{PORT}/health` or similar
+   - **Option C:** Fallback to generic description based on server name
+     - e.g., "tkn-cloudflare" → "Cloudflare infrastructure management"
 
-4. **Identify missing servers** - Compare the deployed servers (from compose.yaml ports) against mcp-servers.json and identify any that are missing
+4. **Read current configuration** - Read `~/.claude-profile/mcp-servers.json`
 
-5. **Add missing servers** - For each missing server, add an entry to mcp-servers.json with:
-   - name: Server name from README table (e.g., "tkn-cloudflare")
+5. **Identify gaps** - Compare deployed servers against configured servers
+   - Missing: In compose.yaml but not in mcp-servers.json
+   - Orphaned: In mcp-servers.json but not in compose.yaml (report only, don't remove)
+
+6. **Add missing servers** - For each missing server:
+   - name: From compose.yaml comment
    - transport: "sse"
-   - url: "http://10.0.0.2:{PORT}/sse" where PORT comes from compose.yaml
-   - description: Description from README table
+   - url: "http://10.0.0.2:{PORT}/sse"
+   - description: From discovery (step 3)
 
-6. **Preserve existing entries** - Don't modify existing entries, only add missing ones
+7. **Report results** - Show what was added, including port numbers and sources used
 
-7. **Report results** - Show what was added (if anything)
+## Important Changes
+
+**Previous behavior (WRONG):**
+- Assumed port numbers in compose.yaml matched README table
+- Used README port numbers
+
+**Current behavior (CORRECT):**
+- Parse actual port mappings from compose.yaml lines: `- "XXXX:YYYY"  # server-name`
+- Use left-side port (XXXX) as the actual deployed port
+- Match descriptions by server NAME, not port number
+- Handle servers not yet in README (use generic description)
 
 ## Format for New Entries
 
@@ -38,14 +65,69 @@ Ensure all deployed MCP servers from `~/git-bnx/TKN/TKNet-MCPServer` are configu
 }
 ```
 
+## Implementation Guidance
+
+### Step 1: Find Compose File
+
+```bash
+# Find TKN MCP server compose files
+Glob "**/compose.yaml" ~/git-bnx/TKN/
+
+# Expected paths:
+# ~/git-bnx/TKN/TKNet-MCPServer/compose.yaml
+# ~/git-bnx/TKN/TKNet-Docker-Stacks/mcp-servers/compose.yaml
+```
+
+### Step 2: Parse Port Mappings
+
+Use Grep with regex to extract port mappings:
+
+```bash
+# Find uncommented port lines with server names
+Grep '^\s*- "[0-9]+:[0-9]+"\s*#\s*' compose.yaml -n
+
+# Parse format: - "8200:8200"  # tkn-cloudflare
+# Extract: port=8200, name=tkn-cloudflare
+```
+
+**Parsing logic:**
+- Match: `- "(\d+):(\d+)"\s*#\s*(.+)$`
+- Use left port number (first capture group)
+- Extract server name from comment (third capture group, trimmed)
+- Skip any line starting with `#` (commented out)
+
+### Step 3: Get Descriptions
+
+**Priority order:**
+
+1. **README table** (most reliable)
+   ```bash
+   Grep "^\|.*\|.*\|.*\|$" ~/git-bnx/TKN/TKNet-MCPServer/README.md
+   # Parse markdown table, match by server name
+   ```
+
+2. **Fallback descriptions** (if README doesn't have entry)
+   - Parse server name: `tkn-{service}` → `{service} management`
+   - Example: `tkn-cloudflare` → "Cloudflare management"
+   - Example: `bnx-googleworkspace` → "Google Workspace management (BoroughNexus)"
+
+### Step 4: Validation
+
+Before adding, verify:
+- Port is in range 8000-9000
+- Server name follows pattern: `(tkn|bnx)-{service}`
+- No duplicate names in mcp-servers.json
+- Port mapping is valid: `"XXXX:XXXX"` (matching ports for SSE)
+
 ## Important Notes
 
-- Only add servers that are **deployed** (have ports exposed in compose.yaml)
-- Use port numbers from compose.yaml (e.g., 8200, 8201, etc.)
-- Descriptions should match the README table exactly
-- The host is always `10.0.0.2` (homelab server)
-- Transport is always `sse` for TKN servers
-- Don't add commented-out ports from compose.yaml (those are not deployed yet)
+- **Dynamic discovery**: Don't hardcode line numbers or file paths
+- **Actual ports**: Use left-side port from `"PORT:PORT"` mapping, not README
+- **Name matching**: Match descriptions by server NAME, not port number
+- **Graceful degradation**: If README is outdated, use generic descriptions
+- **Skip commented**: Only process uncommented lines in compose.yaml
+- **Host IP**: Always `10.0.0.2` for TKN homelab
+- **Transport**: Always `sse` for docker-deployed MCP servers
 
 ## Example
 
