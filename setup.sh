@@ -59,33 +59,251 @@ else
 fi
 
 # ============================================================================
+# MCP DSC Functions
+# ============================================================================
+
+# Helper: Get list of managed server names from mcp-servers.json
+mcp_get_managed_servers() {
+    if [ ! -f "$REPO_DIR/mcp-servers.json" ]; then
+        echo "Error: mcp-servers.json not found at $REPO_DIR/mcp-servers.json" >&2
+        return 1
+    fi
+    jq -r '.servers[].name' "$REPO_DIR/mcp-servers.json" 2>/dev/null
+}
+
+# Helper: Get list of installed server names from ~/.claude.json
+mcp_get_installed_servers() {
+    local CLAUDE_CONFIG="$HOME/.claude.json"
+    if [ -f "$CLAUDE_CONFIG" ]; then
+        jq -r '.mcpServers // {} | keys[]' "$CLAUDE_CONFIG" 2>/dev/null
+    fi
+}
+
+# Helper: Check if MCP server exists in user config
+mcp_server_exists() {
+    local name="$1"
+    local CLAUDE_CONFIG="$HOME/.claude.json"
+    if [ -f "$CLAUDE_CONFIG" ]; then
+        jq -e --arg n "$name" '.mcpServers[$n] != null' "$CLAUDE_CONFIG" >/dev/null 2>&1
+        return $?
+    fi
+    return 1
+}
+
+# MCP DSC Command: list
+mcpdsc_list() {
+    echo "MCP Servers defined in mcp-servers.json:"
+    echo ""
+
+    if [ ! -f "$REPO_DIR/mcp-servers.json" ]; then
+        echo "Error: mcp-servers.json not found"
+        return 1
+    fi
+
+    jq -r '.servers[] | "  \(.name) (\(.transport // "stdio")) - \(.description)"' \
+        "$REPO_DIR/mcp-servers.json" 2>/dev/null
+
+    echo ""
+    echo "Total: $(jq '.servers | length' "$REPO_DIR/mcp-servers.json" 2>/dev/null) servers"
+}
+
+# MCP DSC Command: check
+mcpdsc_check() {
+    echo "Checking MCP server state..."
+    echo ""
+
+    local MANAGED_SERVERS=$(mcp_get_managed_servers)
+    local INSTALLED_SERVERS=$(mcp_get_installed_servers)
+
+    echo "Defined servers:"
+    echo "$MANAGED_SERVERS" | sed 's/^/  ✓ /'
+    echo ""
+
+    echo "Installed servers (tkn- prefix only):"
+    if [ -z "$INSTALLED_SERVERS" ]; then
+        echo "  (none)"
+    else
+        echo "$INSTALLED_SERVERS" | grep '^tkn-' | sed 's/^/  • /' || echo "  (none with tkn- prefix)"
+    fi
+    echo ""
+
+    # Check state
+    local missing=0
+    local extra=0
+    local ok=0
+
+    # Check for missing servers
+    echo "Status:"
+    for server in $MANAGED_SERVERS; do
+        if mcp_server_exists "$server"; then
+            echo "  ✓ $server (installed)"
+            ((ok++))
+        else
+            echo "  ✗ $server (NOT installed)"
+            ((missing++))
+        fi
+    done
+
+    # Check for extra servers
+    for installed in $(echo "$INSTALLED_SERVERS" | grep '^tkn-'); do
+        if ! echo "$MANAGED_SERVERS" | grep -qx "$installed"; then
+            echo "  ⚠ $installed (installed but not in mcp-servers.json)"
+            ((extra++))
+        fi
+    done
+
+    echo ""
+    echo "Summary: $ok ok, $missing missing, $extra extra"
+}
+
+# MCP DSC Command: diff
+mcpdsc_diff() {
+    echo "MCP Server Changes (dry-run):"
+    echo ""
+
+    local MANAGED_SERVERS=$(mcp_get_managed_servers)
+    local changes=0
+
+    # Servers to add
+    echo "Servers to ADD:"
+    for server in $MANAGED_SERVERS; do
+        if ! mcp_server_exists "$server"; then
+            # Get server details
+            local server_info=$(jq --arg n "$server" '.servers[] | select(.name == $n)' \
+                "$REPO_DIR/mcp-servers.json" 2>/dev/null)
+            local transport=$(echo "$server_info" | jq -r '.transport // "stdio"')
+            local url=$(echo "$server_info" | jq -r '.url // ""')
+
+            if [ "$transport" = "sse" ]; then
+                echo "  + $server (sse: $url)"
+            else
+                echo "  + $server (stdio)"
+            fi
+            ((changes++))
+        fi
+    done
+    [ $changes -eq 0 ] && echo "  (none)"
+
+    echo ""
+
+    # Servers to remove
+    local removes=0
+    echo "Servers to REMOVE:"
+    for installed in $(mcp_get_installed_servers | grep '^tkn-'); do
+        if ! echo "$MANAGED_SERVERS" | grep -qx "$installed"; then
+            echo "  - $installed (not in mcp-servers.json)"
+            ((removes++))
+            ((changes++))
+        fi
+    done
+    [ $removes -eq 0 ] && echo "  (none)"
+
+    echo ""
+    if [ $changes -eq 0 ]; then
+        echo "No changes needed - all servers in sync"
+    else
+        echo "Total changes: $changes"
+    fi
+}
+
+# MCP DSC Command: apply-mcp (extracted from main setup)
+mcpdsc_apply() {
+    echo "Applying MCP server configuration..."
+    echo ""
+
+    # Check prerequisites
+    if ! command -v claude &>/dev/null; then
+        echo "Error: claude command not found"
+        return 1
+    fi
+
+    if [ ! -f "$REPO_DIR/mcp-servers.json" ]; then
+        echo "Error: mcp-servers.json not found"
+        return 1
+    fi
+
+    if ! command -v jq &>/dev/null; then
+        echo "Error: jq command not found"
+        return 1
+    fi
+
+    # Run the MCP setup (will be called later in the script)
+    # For now, just indicate we're in apply mode
+    MCPDSC_APPLY_MODE=true
+}
+
+# Handle MCP DSC mode
+if [ -n "$MCPDSC_MODE" ]; then
+    case "$MCPDSC_MODE" in
+        list)
+            mcpdsc_list
+            exit 0
+            ;;
+        check)
+            mcpdsc_check
+            exit 0
+            ;;
+        diff)
+            mcpdsc_diff
+            exit 0
+            ;;
+        apply-mcp)
+            # Don't exit - continue to main setup but skip non-MCP steps
+            MCPDSC_APPLY_MODE=true
+            ;;
+        *)
+            echo "Error: Unknown --mcpdsc command: $MCPDSC_MODE"
+            echo "Valid commands: list, check, diff, apply-mcp"
+            exit 1
+            ;;
+    esac
+fi
+
+# ============================================================================
 # Header
 # ============================================================================
 
-echo ""
-echo "╔════════════════════════════════════════════╗"
-echo "║   Claude Code Profile Setup (DSC)          ║"
-echo "╚════════════════════════════════════════════╝"
-echo ""
-echo "  Repository: $REPO_DIR"
-echo "  Target:     $CLAUDE_HOME"
-echo "  Platform:   $DSC_PLATFORM ($DSC_PKG_MANAGER)"
-echo ""
+if [ -n "$MCPDSC_APPLY_MODE" ]; then
+    echo ""
+    echo "╔════════════════════════════════════════════╗"
+    echo "║   MCP Server DSC Apply                     ║"
+    echo "╚════════════════════════════════════════════╝"
+    echo ""
+    echo "  Repository: $REPO_DIR"
+    echo "  Mode:       MCP servers only"
+    echo ""
+else
+    echo ""
+    echo "╔════════════════════════════════════════════╗"
+    echo "║   Claude Code Profile Setup (DSC)          ║"
+    echo "╚════════════════════════════════════════════╝"
+    echo ""
+    echo "  Repository: $REPO_DIR"
+    echo "  Target:     $CLAUDE_HOME"
+    echo "  Platform:   $DSC_PLATFORM ($DSC_PKG_MANAGER)"
+    echo ""
+fi
 
 # ============================================================================
 # Prerequisites Check
 # ============================================================================
 
-if [ ! -f "$CLAUDE_HOME/.credentials.json" ]; then
-    dsc_failed "Claude is not logged in!"
-    echo "  Please run 'claude' to login first, then re-run this script"
-    echo "  Or use bootstrap.sh which handles this automatically"
-    exit 1
+if [ -z "$MCPDSC_APPLY_MODE" ]; then
+    # Full setup mode - check credentials
+    if [ ! -f "$CLAUDE_HOME/.credentials.json" ]; then
+        dsc_failed "Claude is not logged in!"
+        echo "  Please run 'claude' to login first, then re-run this script"
+        echo "  Or use bootstrap.sh which handles this automatically"
+        exit 1
+    fi
 fi
 
 # ============================================================================
 # Credential Setup (platform-specific)
 # ============================================================================
+
+if [ -z "$MCPDSC_APPLY_MODE" ]; then
+    # Skip credential setup in MCP-only mode
 
 HAVE_ADMIN=false
 ADMIN_USER=""
@@ -286,39 +504,26 @@ chmod +x "$REPO_DIR/services/spec-watcher/watcher.sh" 2>/dev/null || true
 ensure_directory "$CLAUDE_HOME/.spec-plans"
 dsc_unchanged "tools:spec-watcher (available)"
 
+fi  # End of non-MCP setup steps
+
 # ============================================================================
 # Step 5: MCP Servers
 # ============================================================================
 
 echo ""
-echo "── Step 5: MCP Servers ──"
+if [ -n "$MCPDSC_APPLY_MODE" ]; then
+    echo "── Applying MCP Servers ──"
+else
+    echo "── Step 5: MCP Servers ──"
+fi
 
 if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && command -v jq &>/dev/null; then
     # User-scoped MCP servers are stored in ~/.claude.json (not ~/.claude/settings.json)
     CLAUDE_CONFIG="$HOME/.claude.json"
     MCP_TIMEOUT=10  # seconds for SSE server connection test
 
-    # Helper: Check if MCP server exists in user config
-    mcp_server_exists() {
-        local name="$1"
-        if [ -f "$CLAUDE_CONFIG" ]; then
-            jq -e --arg n "$name" '.mcpServers[$n] != null' "$CLAUDE_CONFIG" >/dev/null 2>&1
-            return $?
-        fi
-        return 1
-    }
-
-    # Helper: Get list of managed server names from mcp-servers.json
-    get_managed_servers() {
-        jq -r '.servers[].name' "$REPO_DIR/mcp-servers.json" 2>/dev/null
-    }
-
-    # Helper: Get list of installed server names from ~/.claude.json
-    get_installed_servers() {
-        if [ -f "$CLAUDE_CONFIG" ]; then
-            jq -r '.mcpServers // {} | keys[]' "$CLAUDE_CONFIG" 2>/dev/null
-        fi
-    }
+    # Note: Helper functions (mcp_server_exists, mcp_get_managed_servers, mcp_get_installed_servers)
+    # are defined in the MCP DSC Functions section above
 
     # ── Step 11a: Add missing servers ──
     while IFS= read -r row; do
@@ -384,8 +589,8 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
     # ── Remove servers not in mcp-servers.json ──
     # Only remove servers that were previously managed by this script (have tkn- prefix)
     # Leave other servers alone (user may have added them manually)
-    MANAGED_SERVERS=$(get_managed_servers)
-    for installed in $(get_installed_servers); do
+    MANAGED_SERVERS=$(mcp_get_managed_servers)
+    for installed in $(mcp_get_installed_servers); do
         # Skip if not a tkn- prefixed server (not managed by this profile)
         [[ "$installed" != tkn-* ]] && continue
 
@@ -409,6 +614,9 @@ fi
 # Step 6: Secrets Check
 # ============================================================================
 
+if [ -z "$MCPDSC_APPLY_MODE" ]; then
+    # Skip remaining steps in MCP-only mode
+
 echo ""
 echo "── Step 6: Secrets ──"
 
@@ -417,6 +625,8 @@ if [ -f "$REPO_DIR/secrets.json" ] && command -v jq &>/dev/null; then
 else
     dsc_skipped "secrets (no secrets.json or jq missing)"
 fi
+
+fi  # End of non-MCP steps (Step 6+)
 
 # ============================================================================
 # Summary
@@ -428,18 +638,25 @@ dsc_summary
 # Post-Install Information
 # ============================================================================
 
-echo ""
-echo "── Next Steps ──"
+if [ -z "$MCPDSC_APPLY_MODE" ]; then
+    echo ""
+    echo "── Next Steps ──"
 
-SHELL_NAME=$(basename "$SHELL")
-case "$SHELL_NAME" in
-    zsh)  RELOAD_CMD="source ~/.zshrc" ;;
-    bash) RELOAD_CMD="source ~/.bashrc" ;;
-    *)    RELOAD_CMD="source ~/.profile" ;;
-esac
+    SHELL_NAME=$(basename "$SHELL")
+    case "$SHELL_NAME" in
+        zsh)  RELOAD_CMD="source ~/.zshrc" ;;
+        bash) RELOAD_CMD="source ~/.bashrc" ;;
+        *)    RELOAD_CMD="source ~/.profile" ;;
+    esac
 
-echo "  1. Reload shell: $RELOAD_CMD"
-echo "  2. Run 'claude' to start Claude Code"
-echo "  3. Run './setup-repos.sh' to clone organization repos to ~/git-bnx"
+    echo "  1. Reload shell: $RELOAD_CMD"
+    echo "  2. Run 'claude' to start Claude Code"
+    echo "  3. Run './setup-repos.sh' to clone organization repos to ~/git-bnx"
 
-echo ""
+    echo ""
+else
+    echo ""
+    echo "MCP servers configuration complete."
+    echo "Restart Claude sessions to load new servers."
+    echo ""
+fi
