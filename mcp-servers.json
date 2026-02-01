@@ -155,10 +155,16 @@
       "description": "Webshare.io proxy management"
     },
     {
-      "name": "tkn-media",
+      "name": "bnx-googleworkspace",
       "transport": "sse",
-      "url": "http://10.0.0.2:8221/sse",
-      "description": "Plex, Jellyfin, Tautulli, RDTClient"
+      "url": "http://10.0.0.2:8102/mcp",
+      "description": "Google Workspace (Gmail, Calendar, Drive) for simon@boroughnexus.com"
+    },
+    {
+      "name": "tkn-googleworkspace",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8221/mcp",
+      "description": "Google Workspace (Gmail, Calendar, Drive) for simonbarker@gmail.com"
     }
   ]
 }
