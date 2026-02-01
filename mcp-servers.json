@@ -157,13 +157,13 @@
     {
       "name": "bnx-googleworkspace",
       "transport": "sse",
-      "url": "http://10.0.0.2:8102/mcp",
+      "url": "https://bnx-workspace.thomker.net/mcp",
       "description": "Google Workspace (Gmail, Calendar, Drive) for simon@boroughnexus.com"
     },
     {
       "name": "tkn-googleworkspace",
       "transport": "sse",
-      "url": "http://10.0.0.2:8221/mcp",
+      "url": "https://tkn-workspace.thomker.net/mcp",
       "description": "Google Workspace (Gmail, Calendar, Drive) for simonbarker@gmail.com"
     }
   ]
