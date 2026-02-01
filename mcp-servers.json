@@ -41,12 +41,6 @@
       "description": "Cloudflare DNS and zone management (BoroughNexus business)"
     },
     {
-      "name": "bnx-googleworkspace",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8102/sse",
-      "description": "Google Workspace management (BoroughNexus business)"
-    },
-    {
       "name": "tkn-unraid",
       "transport": "sse",
       "url": "http://10.0.0.2:8201/sse",
@@ -81,12 +75,6 @@
       "transport": "sse",
       "url": "http://10.0.0.2:8206/sse",
       "description": "Tailscale VPN management (devices, DNS, ACLs, keys)"
-    },
-    {
-      "name": "tkn-media",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8207/sse",
-      "description": "Plex, Jellyfin, Tautulli, RDTClient"
     },
     {
       "name": "tkn-syncthing",
@@ -167,10 +155,10 @@
       "description": "Webshare.io proxy management"
     },
     {
-      "name": "tkn-googleworkspace",
+      "name": "tkn-media",
       "transport": "sse",
       "url": "http://10.0.0.2:8221/sse",
-      "description": "Google Workspace management (TKNet homelab)"
+      "description": "Plex, Jellyfin, Tautulli, RDTClient"
     }
   ]
 }
