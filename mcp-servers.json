@@ -79,7 +79,7 @@
     {
       "name": "tkn-media",
       "transport": "sse",
-      "url": "http://10.0.0.2:8207/sse",
+      "url": "http://10.0.0.2:8221/sse",
       "description": "Plex, Jellyfin, Tautulli, RDTClient"
     },
     {
@@ -107,58 +107,58 @@
       "description": "Sonarr, Radarr, Prowlarr"
     },
     {
-      "name": "tkn-borgmatic",
+      "name": "tkn-authentik",
       "transport": "sse",
       "url": "http://10.0.0.2:8212/sse",
-      "description": "Backup management"
-    },
-    {
-      "name": "tkn-terraform",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8213/sse",
-      "description": "Infrastructure as code"
+      "description": "Identity provider management"
     },
     {
       "name": "tkn-azure",
       "transport": "sse",
-      "url": "http://10.0.0.2:8214/sse",
+      "url": "http://10.0.0.2:8213/sse",
       "description": "Azure cloud management"
     },
     {
-      "name": "tkn-authentik",
+      "name": "tkn-borgmatic",
       "transport": "sse",
-      "url": "http://10.0.0.2:8215/sse",
-      "description": "Identity provider management"
-    },
-    {
-      "name": "tkn-litellm",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8216/sse",
-      "description": "LiteLLM proxy management"
-    },
-    {
-      "name": "tkn-local-llm",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8217/sse",
-      "description": "Local LLM management (Ollama, LocalAI)"
-    },
-    {
-      "name": "tkn-webshare",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8218/sse",
-      "description": "Webshare.io proxy management"
+      "url": "http://10.0.0.2:8214/sse",
+      "description": "Backup management"
     },
     {
       "name": "tkn-firecrawl",
       "transport": "sse",
-      "url": "http://10.0.0.2:8219/sse",
+      "url": "http://10.0.0.2:8215/sse",
       "description": "Firecrawl web scraping and crawling"
     },
     {
       "name": "tkn-github",
       "transport": "sse",
-      "url": "http://10.0.0.2:8220/sse",
+      "url": "http://10.0.0.2:8216/sse",
       "description": "GitHub repository and organization management"
+    },
+    {
+      "name": "tkn-litellm",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8217/sse",
+      "description": "LiteLLM proxy management"
+    },
+    {
+      "name": "tkn-local-llm",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8218/sse",
+      "description": "Local LLM management (Ollama, LocalAI)"
+    },
+    {
+      "name": "tkn-terraform",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8219/sse",
+      "description": "Infrastructure as code"
+    },
+    {
+      "name": "tkn-webshare",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8220/sse",
+      "description": "Webshare.io proxy management"
     }
   ]
 }
