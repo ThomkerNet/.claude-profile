@@ -71,12 +71,6 @@
       "description": "Home Assistant OS management"
     },
     {
-      "name": "tkn-portainer",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-portainer/sse",
-      "description": "Docker container management"
-    },
-    {
       "name": "tkn-tailscale",
       "transport": "sse",
       "url": "http://10.0.0.2:8000/tkn-tailscale/sse",
