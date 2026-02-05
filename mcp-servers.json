@@ -29,142 +29,154 @@
       "description": "Step-by-step problem solving"
     },
     {
-      "name": "tkn-cloudflare",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8200/sse",
-      "description": "Cloudflare DNS and zone management (TKNet homelab)"
-    },
-    {
       "name": "bnx-cloudflare",
       "transport": "sse",
-      "url": "http://10.0.0.2:8100/sse",
-      "description": "Cloudflare DNS and zone management (BoroughNexus business)"
+      "url": "http://10.0.0.2:8000/bnx-cloudflare/sse",
+      "description": "Cloudflare DNS and Zero Trust (BNX account)"
+    },
+    {
+      "name": "bnx-googleworkspace",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8000/bnx-googleworkspace/sse",
+      "description": "Google Workspace (Gmail, Calendar, Drive) for simon@boroughnexus.com"
+    },
+    {
+      "name": "tkn-cloudflare",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8000/tkn-cloudflare/sse",
+      "description": "DNS and zone management"
     },
     {
       "name": "tkn-unraid",
       "transport": "sse",
-      "url": "http://10.0.0.2:8201/sse",
-      "description": "Unraid server management (array, containers, VMs, notifications)"
+      "url": "http://10.0.0.2:8000/tkn-unraid/sse",
+      "description": "Unraid server management"
     },
     {
       "name": "tkn-aipeerreview",
       "transport": "sse",
-      "url": "http://10.0.0.2:8202/sse",
-      "description": "Multi-model AI code review via LiteLLM proxy"
+      "url": "http://10.0.0.2:8000/tkn-aipeerreview/sse",
+      "description": "AI code review proxy"
     },
     {
       "name": "tkn-unifi",
       "transport": "sse",
-      "url": "http://10.0.0.2:8203/sse",
-      "description": "UniFi network management (devices, clients, networks)"
+      "url": "http://10.0.0.2:8000/tkn-unifi/sse",
+      "description": "UniFi network management"
     },
     {
       "name": "tkn-haos",
       "transport": "sse",
-      "url": "http://10.0.0.2:8204/sse",
+      "url": "http://10.0.0.2:8000/tkn-haos/sse",
       "description": "Home Assistant OS management"
     },
     {
       "name": "tkn-portainer",
       "transport": "sse",
-      "url": "http://10.0.0.2:8205/sse",
-      "description": "Docker infrastructure management via Portainer API"
+      "url": "http://10.0.0.2:8000/tkn-portainer/sse",
+      "description": "Docker container management"
     },
     {
       "name": "tkn-tailscale",
       "transport": "sse",
-      "url": "http://10.0.0.2:8206/sse",
-      "description": "Tailscale VPN management (devices, DNS, ACLs, keys)"
+      "url": "http://10.0.0.2:8000/tkn-tailscale/sse",
+      "description": "Tailscale VPN management"
+    },
+    {
+      "name": "tkn-media",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8000/tkn-media/sse",
+      "description": "Plex, Jellyfin, Tautulli, RDTClient"
     },
     {
       "name": "tkn-syncthing",
       "transport": "sse",
-      "url": "http://10.0.0.2:8208/sse",
-      "description": "Syncthing file sync management (folders, devices, stats)"
+      "url": "http://10.0.0.2:8000/tkn-syncthing/sse",
+      "description": "File sync management"
     },
     {
       "name": "tkn-registry",
       "transport": "sse",
-      "url": "http://10.0.0.2:8209/sse",
-      "description": "Local Docker registry management (catalog, tags, images)"
+      "url": "http://10.0.0.2:8000/tkn-registry/sse",
+      "description": "Container registry"
     },
     {
       "name": "tkn-infisical",
       "transport": "sse",
-      "url": "http://10.0.0.2:8210/sse",
-      "description": "Infisical secrets management (projects, folders, secrets)"
+      "url": "http://10.0.0.2:8000/tkn-infisical/sse",
+      "description": "Secrets management"
     },
     {
       "name": "tkn-arr",
       "transport": "sse",
-      "url": "http://10.0.0.2:8211/sse",
+      "url": "http://10.0.0.2:8000/tkn-arr/sse",
       "description": "Sonarr, Radarr, Prowlarr"
     },
     {
       "name": "tkn-authentik",
       "transport": "sse",
-      "url": "http://10.0.0.2:8212/sse",
+      "url": "http://10.0.0.2:8000/tkn-authentik/sse",
       "description": "Identity provider management"
     },
     {
       "name": "tkn-azure",
       "transport": "sse",
-      "url": "http://10.0.0.2:8213/sse",
+      "url": "http://10.0.0.2:8000/tkn-azure/sse",
       "description": "Azure cloud management"
     },
     {
       "name": "tkn-borgmatic",
       "transport": "sse",
-      "url": "http://10.0.0.2:8214/sse",
+      "url": "http://10.0.0.2:8000/tkn-borgmatic/sse",
       "description": "Backup management"
     },
     {
       "name": "tkn-firecrawl",
       "transport": "sse",
-      "url": "http://10.0.0.2:8215/sse",
-      "description": "Firecrawl web scraping and crawling"
+      "url": "http://10.0.0.2:8000/tkn-firecrawl/sse",
+      "description": "Firecrawl web scraping, crawling, and search"
     },
     {
       "name": "tkn-github",
       "transport": "sse",
-      "url": "http://10.0.0.2:8216/sse",
+      "url": "http://10.0.0.2:8000/tkn-github/sse",
       "description": "GitHub repository and organization management"
     },
     {
       "name": "tkn-litellm",
       "transport": "sse",
-      "url": "http://10.0.0.2:8217/sse",
+      "url": "http://10.0.0.2:8000/tkn-litellm/sse",
       "description": "LiteLLM proxy management"
     },
     {
       "name": "tkn-local-llm",
       "transport": "sse",
-      "url": "http://10.0.0.2:8218/sse",
+      "url": "http://10.0.0.2:8000/tkn-local-llm/sse",
       "description": "Local LLM management (Ollama, LocalAI)"
     },
     {
       "name": "tkn-terraform",
       "transport": "sse",
-      "url": "http://10.0.0.2:8219/sse",
+      "url": "http://10.0.0.2:8000/tkn-terraform/sse",
       "description": "Infrastructure as code"
     },
     {
       "name": "tkn-webshare",
       "transport": "sse",
-      "url": "http://10.0.0.2:8220/sse",
+      "url": "http://10.0.0.2:8000/tkn-webshare/sse",
       "description": "Webshare.io proxy management"
-    },
-    {
-      "name": "bnx-googleworkspace",
-      "transport": "sse",
-      "url": "https://bnx-workspace.thomker.net/mcp",
-      "description": "Google Workspace (Gmail, Calendar, Drive) for simon@boroughnexus.com"
     },
     {
       "name": "tkn-googleworkspace",
       "transport": "sse",
-      "url": "https://tkn-workspace.thomker.net/mcp",
+      "url": "http://10.0.0.2:8000/tkn-googleworkspace/sse",
       "description": "Google Workspace (Gmail, Calendar, Drive) for simonbarker@gmail.com"
+    },
+    {
+      "name": "tkn-proxmox",
+      "transport": "sse",
+      "url": "http://10.0.0.2:8000/tkn-proxmox/sse",
+      "description": "Proxmox VE cluster and VM management (pve-1, pve-2, pve-3)"
     }
   ]
 }
