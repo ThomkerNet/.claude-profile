@@ -76,13 +76,13 @@ Before deploying, check for and review these files in the project (or parent dir
 - Docker Swarm / standalone containers
 - Cloudflare Tunnels for external access
 - Self-hosted PostgreSQL
-- Portainer for container management
+- Komodo for container management
 
 **Deployment Process:**
 1. **Build locally:** Test Docker image build
 2. **Deploy to staging:** If multi-stage setup exists
 3. **Update compose file:** Version tags, environment variables
-4. **Deploy:** `docker compose up -d` or Portainer UI
+4. **Deploy:** `docker compose up -d` or Komodo UI
 5. **Health check:** Verify service availability via Cloudflare Tunnel
 
 **Required Checks:**

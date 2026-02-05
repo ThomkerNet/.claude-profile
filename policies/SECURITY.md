@@ -16,7 +16,7 @@
 
 ### Development
 - **Source:** Bitwarden vault (via `/bw-ref` skill)
-- **Access:** `bw-tkn` wrapper for secure token management
+- **Access:** `bw` CLI with operator-provided session token
 - **Never commit:**
   - `.env` files (use `.env.example` for structure only)
   - `credentials.json` or similar
@@ -37,7 +37,7 @@
 - **Homelab (Other projects):**
   - Docker secrets for containerized apps
   - Environment files (git-ignored, deployed separately)
-  - Portainer secret management
+  - Komodo secret management
 
 ---
 

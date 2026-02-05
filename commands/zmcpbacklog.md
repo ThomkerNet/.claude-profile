@@ -88,7 +88,7 @@ tkn-cloudflare    - DNS/zones
 tkn-unraid        - Unraid server management
 tkn-aipeerreview  - AI code review
 tkn-unifi         - Network management
-tkn-portainer     - Docker/Portainer
+tkn-komodo        - Docker/Komodo
 tkn-tailscale     - VPN management
 tkn-syncthing     - File sync
 tkn-registry      - Docker registry

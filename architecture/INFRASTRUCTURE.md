@@ -48,7 +48,7 @@ Different projects use different infrastructure based on their needs, scale, and
 | Component | Service | Justification |
 |-----------|---------|---------------|
 | **Container Orchestration** | Docker Swarm / Standalone | Lightweight, sufficient for homelab scale |
-| **Container Management** | Portainer | Web UI for Docker management |
+| **Container Management** | Komodo | Web UI for Docker management |
 | **Database** | Self-hosted PostgreSQL | Full control, no cloud costs |
 | **Reverse Proxy** | Traefik or Nginx | Routing, SSL termination |
 | **External Access** | Cloudflare Tunnels | Secure ingress without open ports |
@@ -200,7 +200,7 @@ docker exec -it postgres psql -U postgres
 2. Webhook triggers build (if configured)
 3. Build Docker image locally or on Mac Mini
 4. Push to local registry or Docker Hub
-5. Deploy via `docker compose up -d` or Portainer webhook
+5. Deploy via `docker compose up -d` or Komodo webhook
 
 **Secrets:** Docker secrets or git-ignored env files
 
@@ -223,7 +223,7 @@ docker exec -it postgres psql -U postgres
 
 | Aspect | Tool | What We Monitor |
 |--------|------|-----------------|
-| **Container Health** | Portainer UI | Running/stopped containers |
+| **Container Health** | Komodo UI | Running/stopped containers |
 | **Logs** | `docker logs` or Dozzle | Container stdout/stderr |
 | **System Resources** | Grafana + Prometheus (optional) | CPU, memory, disk |
 | **Uptime** | Healthchecks.io or UptimeRobot | Ping critical services |

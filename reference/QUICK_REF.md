@@ -158,7 +158,7 @@ az containerapp update --name <app> --resource-group <rg> --image <image>
 | **Hosting** | Mac Mini cluster + Docker |
 | **External Access** | Cloudflare Tunnels |
 | **Database** | Self-hosted PostgreSQL |
-| **Management** | Portainer |
+| **Management** | Komodo |
 
 ---
 
@@ -170,7 +170,7 @@ az containerapp update --name <app> --resource-group <rg> --image <image>
 - Azure Portal: `https://portal.azure.com`
 
 **Homelab:**
-- Portainer: `https://portainer.yourdomain.com` (via Cloudflare Tunnel)
+- Komodo: `https://komodo.yourdomain.com` (via Cloudflare Tunnel)
 - Monitoring: `https://monitoring.yourdomain.com`
 
 ---
@@ -302,7 +302,7 @@ alias gl='git pull'
 
 ### Homelab
 
-- **Portainer:** Web UI for container status
+- **Komodo:** Web UI for container status
 - **System:** `docker ps`, `df -h`, `free -h`
 
 ---

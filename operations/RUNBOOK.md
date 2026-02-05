@@ -343,12 +343,6 @@ bw get password "item-name"
 bw sync
 ```
 
-**Via wrapper (bw-tkn):**
-```bash
-# Use wrapper for automatic session handling
-bw-tkn get password "item-name"
-```
-
 ---
 
 ## Common Troubleshooting

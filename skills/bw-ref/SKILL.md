@@ -1,6 +1,6 @@
 ---
 name: bw-ref
-description: Bitwarden credential access via bw-tkn wrapper. Load when accessing secrets.
+description: Bitwarden credential access via bw CLI. Load when accessing secrets.
 ---
 
 # Bitwarden Reference
@@ -17,25 +17,19 @@ Access is operator-driven - Simon unlocks and provides session token.
 
 ## Workflow
 
-1. **Simon runs:** `bw-tkn unlock --raw` → copies session token
+1. **Simon runs:** `bw unlock --raw` → copies session token
 2. **Claude uses:** Session token for BW commands
-3. **After session:** `bw-tkn lock`
+3. **After session:** `bw lock`
 
 ---
-
-## Wrapper Location
-
-```bash
-~/.claude/tools/bitwarden/bw-tkn
-```
 
 ## Commands
 
 ```bash
-bw-tkn login              # First-time setup
-bw-tkn unlock --raw       # Get session token
-bw-tkn lock               # End session
-bw-tkn get item "name"    # With active session
+bw login                  # First-time setup
+bw unlock --raw           # Get session token
+bw lock                   # End session
+bw get item "name"        # With active session
 ```
 
 ---
@@ -80,7 +74,6 @@ bw list items | jq '.[].name'
 ## Session Management
 
 - Sessions expire on `bw lock` or new terminal
-- Session stored in `~/.claude/tools/bitwarden/.bw-session`
 
 ---
 
