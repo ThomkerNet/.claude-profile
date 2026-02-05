@@ -43,7 +43,24 @@ This token grants complete vault access. Use it directly for any credential need
 export BW_SESSION="$(cat ~/.bwunlockmaster)"
 ```
 
-### 2. Access Any Credential
+### 2. Discover Items (write to /tmp first)
+
+**IMPORTANT:** `bw list items` output is too large to pipe directly — it silently fails. Always write to a temp file first, then query with jq.
+
+```bash
+# Dump full vault index to temp file
+bw list items > /tmp/bw_items.json
+
+# Browse item names
+jq -r '.[].name' /tmp/bw_items.json | grep -i "search term"
+
+# Inspect a specific item's fields and structure
+jq '.[] | select(.name | test("search term"; "i"))' /tmp/bw_items.json
+```
+
+### 3. Retrieve Specific Secrets
+
+Once you know the exact item name from the index, use `bw get item` directly (single-item output is small enough to pipe):
 
 ```bash
 # Get any password
@@ -54,12 +71,6 @@ bw get item "Service Name" | jq -r '.fields[] | select(.name=="API Key") | .valu
 
 # Get username
 bw get item "Service Name" | jq -r '.login.username'
-
-# List all items
-bw list items | jq '.[].name'
-
-# Search items
-bw list items --search "query" | jq '.[].name'
 ```
 
 ---
