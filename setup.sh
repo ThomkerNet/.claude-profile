@@ -90,6 +90,57 @@ mcp_server_exists() {
     return 1
 }
 
+# Helper: Check if installed MCP server config matches desired state
+# Returns 0 if config matches, 1 if drift detected
+mcp_server_config_matches() {
+    local name="$1"
+    local desired_row="$2"
+    local CLAUDE_CONFIG="$HOME/.claude.json"
+
+    [ ! -f "$CLAUDE_CONFIG" ] && return 1
+
+    local transport
+    transport=$(echo "$desired_row" | jq -r '.transport // "stdio"')
+    local installed
+    installed=$(jq --arg n "$name" '.mcpServers[$n]' "$CLAUDE_CONFIG" 2>/dev/null)
+    [ "$installed" = "null" ] && return 1
+
+    if [ "$transport" = "sse" ]; then
+        # SSE: compare URL
+        local desired_url installed_url
+        desired_url=$(echo "$desired_row" | jq -r '.url')
+        installed_url=$(echo "$installed" | jq -r '.url // ""')
+        [ "$desired_url" = "$installed_url" ] && return 0 || return 1
+    else
+        # stdio: compare command + args and env vars
+        # Reconstruct desired command string (what claude mcp add receives)
+        local desired_cmd installed_cmd
+        desired_cmd=$(echo "$desired_row" | jq -r '.command')
+        # Installed format: { "command": "npx", "args": ["-y", "pkg"] }
+        # Reconstruct: command + " " + args joined by space
+        installed_cmd=$(echo "$installed" | jq -r '([.command] + (.args // [])) | join(" ")')
+        if [ "$desired_cmd" != "$installed_cmd" ]; then
+            return 1
+        fi
+
+        # Compare env vars
+        # Build desired env with placeholders expanded
+        local desired_env installed_env
+        desired_env=$(echo "$desired_row" | jq -r '.env // {}' | \
+            sed -e "s|{{CLAUDE_HOME}}|$CLAUDE_HOME|g" \
+                -e "s|{{REPO_DIR}}|$REPO_DIR|g" \
+                -e "s|{{HOME}}|$HOME|g")
+        # Filter out entries with unresolved placeholders
+        desired_env=$(echo "$desired_env" | jq 'with_entries(select(.value | test("\\{\\{") | not))')
+        # Normalize: sort keys
+        desired_env=$(echo "$desired_env" | jq -S '.')
+
+        installed_env=$(echo "$installed" | jq -S '.env // {}')
+
+        [ "$desired_env" = "$installed_env" ] && return 0 || return 1
+    fi
+}
+
 # MCP DSC Command: list
 mcpdsc_list() {
     echo "MCP Servers defined in mcp-servers.json:"
@@ -131,29 +182,38 @@ mcpdsc_check() {
     local missing=0
     local extra=0
     local ok=0
+    local drifted=0
 
-    # Check for missing servers
+    # Check for missing/drifted servers
     echo "Status:"
-    for server in $MANAGED_SERVERS; do
+    while IFS= read -r row; do
+        [ -z "$row" ] && continue
+        local server
+        server=$(echo "$row" | jq -r '.name')
         if mcp_server_exists "$server"; then
-            echo "  ✓ $server (installed)"
-            ((ok++))
+            if mcp_server_config_matches "$server" "$row"; then
+                echo "  ✓ $server (installed)"
+                ((ok++)) || true
+            else
+                echo "  ⚡ $server (installed, config drift)"
+                ((drifted++)) || true
+            fi
         else
             echo "  ✗ $server (NOT installed)"
-            ((missing++))
+            ((missing++)) || true
         fi
-    done
+    done < <(jq -c '.servers[]' "$REPO_DIR/mcp-servers.json" 2>/dev/null)
 
     # Check for extra servers
     for installed in $(echo "$INSTALLED_SERVERS" | grep '^tkn-'); do
         if ! echo "$MANAGED_SERVERS" | grep -qx "$installed"; then
             echo "  ⚠ $installed (installed but not in mcp-servers.json)"
-            ((extra++))
+            ((extra++)) || true
         fi
     done
 
     echo ""
-    echo "Summary: $ok ok, $missing missing, $extra extra"
+    echo "Summary: $ok ok, $drifted drifted, $missing missing, $extra extra"
 }
 
 # MCP DSC Command: diff
@@ -161,39 +221,58 @@ mcpdsc_diff() {
     echo "MCP Server Changes (dry-run):"
     echo ""
 
-    local MANAGED_SERVERS=$(mcp_get_managed_servers)
     local changes=0
 
-    # Servers to add
+    # Servers to add (not installed at all)
+    local adds=0
     echo "Servers to ADD:"
-    for server in $MANAGED_SERVERS; do
+    while IFS= read -r row; do
+        [ -z "$row" ] && continue
+        local server transport url
+        server=$(echo "$row" | jq -r '.name')
         if ! mcp_server_exists "$server"; then
-            # Get server details
-            local server_info=$(jq --arg n "$server" '.servers[] | select(.name == $n)' \
-                "$REPO_DIR/mcp-servers.json" 2>/dev/null)
-            local transport=$(echo "$server_info" | jq -r '.transport // "stdio"')
-            local url=$(echo "$server_info" | jq -r '.url // ""')
-
+            transport=$(echo "$row" | jq -r '.transport // "stdio"')
+            url=$(echo "$row" | jq -r '.url // ""')
             if [ "$transport" = "sse" ]; then
                 echo "  + $server (sse: $url)"
             else
                 echo "  + $server (stdio)"
             fi
-            ((changes++))
+            ((adds++)) || true
+            ((changes++)) || true
         fi
-    done
-    [ $changes -eq 0 ] && echo "  (none)"
+    done < <(jq -c '.servers[]' "$REPO_DIR/mcp-servers.json" 2>/dev/null)
+    [ $adds -eq 0 ] && echo "  (none)"
+
+    echo ""
+
+    # Servers with config drift (installed but config doesn't match)
+    local drifts=0
+    echo "Servers to UPDATE (config drift):"
+    while IFS= read -r row; do
+        [ -z "$row" ] && continue
+        local server
+        server=$(echo "$row" | jq -r '.name')
+        if mcp_server_exists "$server" && ! mcp_server_config_matches "$server" "$row"; then
+            echo "  ~ $server (config drift)"
+            ((drifts++)) || true
+            ((changes++)) || true
+        fi
+    done < <(jq -c '.servers[]' "$REPO_DIR/mcp-servers.json" 2>/dev/null)
+    [ $drifts -eq 0 ] && echo "  (none)"
 
     echo ""
 
     # Servers to remove
     local removes=0
+    local MANAGED_SERVERS
+    MANAGED_SERVERS=$(mcp_get_managed_servers)
     echo "Servers to REMOVE:"
     for installed in $(mcp_get_installed_servers | grep '^tkn-'); do
         if ! echo "$MANAGED_SERVERS" | grep -qx "$installed"; then
             echo "  - $installed (not in mcp-servers.json)"
-            ((removes++))
-            ((changes++))
+            ((removes++)) || true
+            ((changes++)) || true
         fi
     done
     [ $removes -eq 0 ] && echo "  (none)"
@@ -532,10 +611,19 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
         transport=$(echo "$row" | jq -r '.transport // "stdio"')
         scope=$(echo "$row" | jq -r '.scope // "user"')
 
-        # Idempotent check: skip if server already exists
+        # Idempotent check: skip if server exists and config matches
+        is_update=false
         if mcp_server_exists "$name"; then
-            dsc_unchanged "mcp:$name"
-            continue
+            if mcp_server_config_matches "$name" "$row"; then
+                dsc_unchanged "mcp:$name"
+                continue
+            fi
+            # Drift detected - remove before re-adding
+            if ! claude mcp remove "$name" --scope "$scope" 2>/dev/null; then
+                dsc_failed "mcp:$name (drift detected, removal failed)"
+                continue
+            fi
+            is_update=true
         fi
 
         if [ "$transport" = "sse" ]; then
@@ -546,7 +634,11 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
             mcp_output=$(claude mcp add "$name" --transport sse --scope "$scope" "$url" 2>&1)
             mcp_exit=$?
             if [ $mcp_exit -eq 0 ]; then
-                dsc_changed "mcp:$name (added, sse, scope=$scope)"
+                if [ "$is_update" = true ]; then
+                    dsc_changed "mcp:$name (updated, sse, scope=$scope)"
+                else
+                    dsc_changed "mcp:$name (added, sse, scope=$scope)"
+                fi
             else
                 # Server add failed - endpoint may be unreachable or other error
                 echo "    Error: $mcp_output" | head -2 >&2
@@ -574,7 +666,11 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
             mcp_output=$(claude mcp add "$name" --transport stdio --scope "$scope" "${env_args[@]}" -- $cmd 2>&1)
             mcp_exit=$?
             if [ $mcp_exit -eq 0 ]; then
-                dsc_changed "mcp:$name (added, scope=$scope)"
+                if [ "$is_update" = true ]; then
+                    dsc_changed "mcp:$name (updated, scope=$scope)"
+                else
+                    dsc_changed "mcp:$name (added, scope=$scope)"
+                fi
             else
                 echo "    Error: $mcp_output" | head -2
                 dsc_failed "mcp:$name"
