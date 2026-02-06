@@ -43,9 +43,8 @@
     },
     {
       "name": "tkn-cloudflare",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-cloudflare/sse",
-      "description": "DNS and zone management"
+      "command": "npx -y mcp-remote http://10.0.0.2:8000/tkn-cloudflare/sse --allow-http",
+      "description": "DNS and zone management (via mcp-remote proxy)"
     },
     {
       "name": "tkn-unraid",
