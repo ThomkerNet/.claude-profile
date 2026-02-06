@@ -539,22 +539,18 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
         fi
 
         if [ "$transport" = "sse" ]; then
-            # SSE transport: connect to remote URL with timeout
+            # SSE transport: connect to remote URL
             url=$(echo "$row" | jq -r '.url')
 
-            # Test SSE endpoint reachability before adding (with timeout)
-            if ! timeout "$MCP_TIMEOUT" curl -sf --max-time "$MCP_TIMEOUT" -o /dev/null "$url" 2>/dev/null; then
-                dsc_skipped "mcp:$name (SSE endpoint unreachable: $url)"
-                continue
-            fi
-
+            # Add SSE server - claude mcp add will validate endpoint connectivity
             mcp_output=$(claude mcp add "$name" --transport sse --scope "$scope" "$url" 2>&1)
             mcp_exit=$?
             if [ $mcp_exit -eq 0 ]; then
                 dsc_changed "mcp:$name (added, sse, scope=$scope)"
             else
-                echo "    Error: $mcp_output" | head -2
-                dsc_failed "mcp:$name"
+                # Server add failed - endpoint may be unreachable or other error
+                echo "    Error: $mcp_output" | head -2 >&2
+                dsc_skipped "mcp:$name (failed to add)"
             fi
         else
             # stdio transport: spawn local process
