@@ -54,9 +54,8 @@
     },
     {
       "name": "tkn-aipeerreview",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-aipeerreview/sse",
-      "description": "AI code review proxy"
+      "command": "npx -y mcp-remote http://10.0.0.2:8000/tkn-aipeerreview/sse --allow-http",
+      "description": "AI code review proxy (via mcp-remote)"
     },
     {
       "name": "tkn-unifi",
