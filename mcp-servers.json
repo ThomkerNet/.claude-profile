@@ -54,8 +54,8 @@
     },
     {
       "name": "tkn-aipeerreview",
-      "command": "npx -y mcp-remote http://10.0.0.2:8202/sse --allow-http",
-      "description": "AI code review proxy (direct port, via mcp-remote)"
+      "command": "npx -y mcp-remote http://mcp-peer:8202/sse --allow-http",
+      "description": "AI Peer Review - multi-model code review via LiteLLM (Tailscale)"
     },
     {
       "name": "tkn-unifi",
