@@ -208,6 +208,27 @@ See [QUICK_REF.md](reference/QUICK_REF.md) for more shortcuts and paths.
 
 ---
 
+## MCP Server Connectivity (CRITICAL)
+
+**Nginx path-prefix proxying BREAKS MCP SSE protocol.** Do NOT use URLs like `http://10.0.0.2:8000/tkn-server/sse`.
+
+**Root cause:** MCP servers return absolute paths (`/messages/?session_id=xxx`) in SSE responses. When behind an nginx path-prefix proxy (`/tkn-server/`), the client resolves `/messages/` against the host root, losing the prefix. The POST to `/messages/` hits nginx's default handler instead of the MCP server.
+
+**Correct pattern:** Connect directly to container ports via `mcp-remote`:
+```
+npx -y mcp-remote http://10.0.0.2:<PORT>/sse --allow-http
+```
+
+| Server | Port | URL |
+|--------|------|-----|
+| tkn-cloudflare | 8200 | `http://10.0.0.2:8200/sse` |
+| tkn-unraid | 8201 | `http://10.0.0.2:8201/sse` |
+| tkn-aipeerreview | 8202 | `http://10.0.0.2:8202/sse` |
+
+**Never** route MCP connections through nginx path-prefix proxy. Always use direct port access.
+
+---
+
 ## Notes
 
 - **Scratchpad for temp files:** Use session-specific scratchpad directory (not `/tmp`)
