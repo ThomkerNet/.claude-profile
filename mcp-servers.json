@@ -170,6 +170,11 @@
       "transport": "sse",
       "url": "http://10.0.0.2:8000/tkn-proxmox/sse",
       "description": "Proxmox VE cluster and VM management (pve-1, pve-2, pve-3)"
+    },
+    {
+      "name": "tkn-komodo",
+      "command": "npx -y mcp-remote http://10.0.0.2:8222/sse --allow-http",
+      "description": "Komodo build and deployment management (direct port, via mcp-remote)"
     }
   ]
 }
