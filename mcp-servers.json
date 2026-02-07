@@ -173,8 +173,8 @@
     },
     {
       "name": "tkn-komodo",
-      "command": "npx -y mcp-remote http://10.0.0.2:8222/sse --allow-http",
-      "description": "Komodo build and deployment management (direct port, via mcp-remote)"
+      "command": "npx -y mcp-remote https://mcp-komodo.gate-hexatonic.ts.net/sse",
+      "description": "Komodo build and deployment management (Tailscale HTTPS, via mcp-remote)"
     }
   ]
 }
