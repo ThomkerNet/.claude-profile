@@ -43,8 +43,8 @@
     },
     {
       "name": "tkn-cloudflare",
-      "command": "npx -y mcp-remote http://10.0.0.2:8000/tkn-cloudflare/sse --allow-http",
-      "description": "DNS and zone management (via mcp-remote proxy)"
+      "command": "npx -y mcp-remote http://10.0.0.2:8200/sse --allow-http",
+      "description": "DNS and zone management (direct port, via mcp-remote)"
     },
     {
       "name": "tkn-unraid",
@@ -54,8 +54,8 @@
     },
     {
       "name": "tkn-aipeerreview",
-      "command": "npx -y mcp-remote http://10.0.0.2:8000/tkn-aipeerreview/sse --allow-http",
-      "description": "AI code review proxy (via mcp-remote)"
+      "command": "npx -y mcp-remote http://10.0.0.2:8202/sse --allow-http",
+      "description": "AI code review proxy (direct port, via mcp-remote)"
     },
     {
       "name": "tkn-unifi",
