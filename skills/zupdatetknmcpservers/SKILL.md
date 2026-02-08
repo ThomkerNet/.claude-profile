@@ -96,7 +96,19 @@ Each server entry uses `npx -y mcp-remote` with Tailscale HTTPS:
 }
 ```
 
-**Tailscale hostname mapping:** The hostname in the URL (e.g. `mcp-tkn-bnx-cloudflare`, `mcp-unraid`) is configured in Tailscale serve config, NOT derived from compose.yaml port numbers. For existing servers, **preserve the current URL from mcp-servers.json**. For NEW servers that don't yet have an entry, flag them with a `TODO` comment and the port number so the operator can configure Tailscale serve.
+**Tailscale hostname mapping:** The hostname in the URL is configured in Tailscale serve config. For existing servers, **preserve the current URL from mcp-servers.json**. For NEW servers, generate a proposed URL following the common pattern:
+
+1. Strip `tkn-` or `bnx-` prefix from compose service name
+2. Prepend `mcp-`
+3. Form: `https://mcp-{stripped-name}.gate-hexatonic.ts.net/sse`
+
+Example: `tkn-media` → `https://mcp-media.gate-hexatonic.ts.net/sse`
+
+Mark the proposed URL as **UNVERIFIED** in the report. After writing mcp-servers.json, verify with:
+```bash
+curl -sf -o /dev/null -w "%{http_code}" https://mcp-{name}.gate-hexatonic.ts.net/sse
+```
+If the health check fails (non-200), flag it for operator to configure Tailscale serve for port XXXX.
 
 ## Important Rules
 
@@ -140,13 +152,14 @@ ports:
   "servers": [
     {"name": "memory", "command": "..."},
     {"name": "tkn-cloudflare", "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse", "description": "DNS and zone management"},
-    {"name": "tkn-media", "command": "TODO: configure Tailscale serve for port 8221, then set URL here", "description": "Plex, Jellyfin (Tailscale HTTPS)"}
+    {"name": "tkn-media", "command": "npx -y mcp-remote https://mcp-media.gate-hexatonic.ts.net/sse", "description": "Plex, Jellyfin (Tailscale HTTPS)"}
   ]
 }
 ```
 
 **Report:**
-- Added: 1 server (tkn-media - needs Tailscale hostname config, port 8221)
+- Added: 1 server (tkn-media, port 8221, UNVERIFIED URL - verifying...)
+  - `curl -sf https://mcp-media.gate-hexatonic.ts.net/sse` → 200 OK (verified)
 - Unchanged: 1 server (tkn-cloudflare)
 
 ## Implementation Steps

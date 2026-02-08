@@ -127,8 +127,8 @@ Docker/homelab configuration:
 
 📝 Obsidian Documentation:
    → Updated Projects/BoroughNexus/AI-Claude/Tools.md
-   → Added: Model selection rationale for peer review
-   → Linked: [[LiteLLM]], [[GitHub Copilot]]
+   → Added: MCP server configuration notes
+   → Linked: [[MCP-Server-Architecture]], [[TKNet-MCPServer]]
 
 ✨ Done! Changes committed, pushed, and documented.
 ```

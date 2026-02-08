@@ -54,3 +54,17 @@ All notable changes to this Claude Code profile are documented here.
 - **v2.0 Architecture**: Two-phase setup (`~/.claude-profile/` repo + `~/.claude/` runtime)
 - Cross-platform support (Windows, macOS, Linux)
 - Status line with model, git branch, session label, token usage
+
+---
+
+## Pre-v2.0 History (2025-12-28 to 2025-12-29)
+
+The following features were part of the original v1.0 profile and have since been removed or replaced:
+
+- **Telegram bot integration** - Two-way remote control via Telegram bot (removed: too clunky, replaced by direct MCP server access)
+- **Multi-LLM CLI setup** - Local Gemini CLI and GitHub Copilot CLI for peer review and terminal assistance (removed 2026-02-08: replaced by `tkn-aipeerreview` MCP server)
+- **Vault slash commands** - `/vault-start`, `/vault-stop`, `/vault-get`, `/vault-search` for `bw serve` REST API on localhost:8087 (removed: replaced by `/bwdangerunlock` with direct `bw` CLI)
+- **Template-based command generation** - `.template.md` files with `{{BUN_PATH}}` substitution (simplified: commands now use `bun` from PATH and `~` tilde expansion)
+- **Interactive Vaultwarden login** - Master password not stored, interactive `bw login` flow (replaced by operator-placed session token at `~/.bwunlockmaster`)
+
+Full git history available at: `https://github.com/ThomkerNet/.claude-profile`
