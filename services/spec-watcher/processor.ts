@@ -7,7 +7,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { basename, dirname } from "path";
+import { basename } from "path";
 
 // Parse YAML frontmatter from markdown
 function parseFrontmatter(content: string): { frontmatter: Record<string, string>; body: string } {

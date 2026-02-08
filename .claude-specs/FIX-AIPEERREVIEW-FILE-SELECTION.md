@@ -1,3 +1,5 @@
+> **ARCHIVED:** This spec is obsolete. The local `/aipeerreview` scripts have been removed in favor of the `tkn-aipeerreview` MCP server.
+
 # Spec: Fix AI Peer Review File Selection
 
 **Generated:** 2026-01-09

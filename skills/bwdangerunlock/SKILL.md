@@ -83,13 +83,18 @@ With full access, you can retrieve:
 
 ---
 
-## Security Reminders
+## Security Guardrails
 
-Even with full access:
-1. Never log or echo credentials in output
-2. Never commit credentials to git
-3. Use environment variables for secrets in commands
-4. Token expires on lock or terminal close
+This token grants **full vault access** - treat it with care:
+
+1. **Never** log, echo, or print credentials in output
+2. **Never** commit credentials to git
+3. **Never** store credentials in files (use environment variables only)
+4. **Retrieve only what you need** - don't dump the full vault unnecessarily
+5. **Clear variables** after use when possible (`unset VAR_NAME`)
+6. **Avoid shell history exposure** - prefix sensitive commands with a space (` export BW_SESSION=...`)
+7. Token expires on `bw lock` or terminal close - session is time-bounded
+8. Clean up temp files containing vault data (e.g. `/tmp/bw_items.json`) when done
 
 ---
 
