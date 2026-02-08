@@ -30,151 +30,39 @@
       "description": "Step-by-step problem solving"
     },
     {
-      "name": "bnx-cloudflare",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/bnx-cloudflare/sse",
-      "description": "Cloudflare DNS and Zero Trust (BNX account)"
-    },
-    {
-      "name": "bnx-googleworkspace",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/bnx-googleworkspace/sse",
-      "description": "Google Workspace (Gmail, Calendar, Drive) for simon@boroughnexus.com"
-    },
-    {
       "name": "tkn-cloudflare",
-      "command": "npx -y mcp-remote http://10.0.0.2:8200/sse --allow-http",
-      "description": "DNS and zone management (direct port, via mcp-remote)"
+      "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse",
+      "description": "Cloudflare DNS, Zero Trust, Tunnels, DLP (116 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-unraid",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-unraid/sse",
-      "description": "Unraid server management"
+      "command": "npx -y mcp-remote https://mcp-unraid.gate-hexatonic.ts.net/sse",
+      "description": "Unraid server management (Tailscale HTTPS)"
     },
     {
       "name": "tkn-aipeerreview",
-      "command": "npx -y mcp-remote http://mcp-peer:8202/sse --allow-http",
-      "description": "AI Peer Review - multi-model code review via LiteLLM (Tailscale)"
-    },
-    {
-      "name": "tkn-unifi",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-unifi/sse",
-      "description": "UniFi network management"
-    },
-    {
-      "name": "tkn-haos",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-haos/sse",
-      "description": "Home Assistant OS management"
-    },
-    {
-      "name": "tkn-tailscale",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-tailscale/sse",
-      "description": "Tailscale VPN management"
-    },
-    {
-      "name": "tkn-media",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-media/sse",
-      "description": "Plex, Jellyfin, Tautulli, RDTClient"
-    },
-    {
-      "name": "tkn-syncthing",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-syncthing/sse",
-      "description": "File sync management"
-    },
-    {
-      "name": "tkn-registry",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-registry/sse",
-      "description": "Container registry"
-    },
-    {
-      "name": "tkn-infisical",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-infisical/sse",
-      "description": "Secrets management"
-    },
-    {
-      "name": "tkn-arr",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-arr/sse",
-      "description": "Sonarr, Radarr, Prowlarr"
-    },
-    {
-      "name": "tkn-authentik",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-authentik/sse",
-      "description": "Identity provider management"
-    },
-    {
-      "name": "tkn-azure",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-azure/sse",
-      "description": "Azure cloud management"
-    },
-    {
-      "name": "tkn-borgmatic",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-borgmatic/sse",
-      "description": "Backup management"
-    },
-    {
-      "name": "tkn-firecrawl",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-firecrawl/sse",
-      "description": "Firecrawl web scraping, crawling, and search"
-    },
-    {
-      "name": "tkn-github",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-github/sse",
-      "description": "GitHub repository and organization management"
-    },
-    {
-      "name": "tkn-litellm",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-litellm/sse",
-      "description": "LiteLLM proxy management"
-    },
-    {
-      "name": "tkn-local-llm",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-local-llm/sse",
-      "description": "Local LLM management (Ollama, LocalAI)"
-    },
-    {
-      "name": "tkn-terraform",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-terraform/sse",
-      "description": "Infrastructure as code"
-    },
-    {
-      "name": "tkn-webshare",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-webshare/sse",
-      "description": "Webshare.io proxy management"
-    },
-    {
-      "name": "tkn-googleworkspace",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-googleworkspace/sse",
-      "description": "Google Workspace (Gmail, Calendar, Drive) for simonbarker@gmail.com"
-    },
-    {
-      "name": "tkn-proxmox",
-      "transport": "sse",
-      "url": "http://10.0.0.2:8000/tkn-proxmox/sse",
-      "description": "Proxmox VE cluster and VM management (pve-1, pve-2, pve-3)"
+      "command": "npx -y mcp-remote https://mcp-aipeer.gate-hexatonic.ts.net/sse",
+      "description": "AI Peer Review - multi-model code review via LiteLLM (Tailscale HTTPS)"
     },
     {
       "name": "tkn-komodo",
       "command": "npx -y mcp-remote https://mcp-komodo.gate-hexatonic.ts.net/sse",
-      "description": "Komodo build and deployment management (Tailscale HTTPS, via mcp-remote)"
+      "description": "Komodo build and deployment management (86 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-authentik",
+      "command": "npx -y mcp-remote https://mcp-authentik.gate-hexatonic.ts.net/sse",
+      "description": "Authentik identity provider management (Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-firecrawl",
+      "command": "npx -y mcp-remote https://mcp-firecrawl.gate-hexatonic.ts.net/sse",
+      "description": "Firecrawl web scraping, crawling, and search (Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-gmail",
+      "command": "npx -y mcp-remote https://tkn-gmail.gate-hexatonic.ts.net/sse",
+      "description": "Gmail for simonbarker@gmail.com (37 tools, Tailscale HTTPS)"
     }
   ]
 }
