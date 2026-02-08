@@ -1,3 +1,5 @@
+> **ARCHIVED:** This feature has been deprecated. The local `/aipeerreview` command and scripts have been removed in favor of the `tkn-aipeerreview` MCP server.
+
 # AI Peer Review Slash Command Implementation
 
 ## Overview

@@ -1,3 +1,5 @@
+> **ARCHIVED:** This plan is superseded. Peer review is now handled by the `tkn-aipeerreview` MCP server. Local Copilot/Gemini CLI patterns and `/aipeerreview` have been removed.
+
 # Plan: Consolidate Peer Review to Copilot CLI
 
 ## Peer Review Feedback (GPT-5.1 + Claude Opus)

@@ -557,11 +557,6 @@ ensure_profile_entry "local-bin" 'export PATH="$HOME/.local/bin:$PATH"'
 # SSH truecolor fix (prevents Claude Code pane flashing over SSH)
 ensure_profile_entry "ssh-truecolor" 'if [[ -n "$SSH_CONNECTION" && "$COLORTERM" == "truecolor" ]]; then export TERM=alacritty; fi'
 
-# Apply secrets if available
-if [ -f "$REPO_DIR/secrets.json" ] && command -v jq &>/dev/null; then
-    : # Placeholder for future secret loading
-fi
-
 # ============================================================================
 # Step 4: Tools
 # ============================================================================

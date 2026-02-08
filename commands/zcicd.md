@@ -172,7 +172,9 @@ If the automatic fix didn't resolve the issue:
    - Recent changes that may have caused the issue
 
 2. **Run peer review via MCP server:**
-   Use `tkn-aipeerreview` MCP tools (e.g. `peer_review` or `quick_review`) to get multi-model analysis of the failing code.
+   Invoke the `tkn-aipeerreview` MCP server for multi-model analysis:
+   - `mcp__tkn-aipeerreview__peer_review` - Full review across 3 models (specify `content`, `review_type: "bug"`)
+   - `mcp__tkn-aipeerreview__quick_review` - Single-model quick feedback for faster iteration
 
 3. **Apply peer review recommendations**
 

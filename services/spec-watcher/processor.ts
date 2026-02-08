@@ -7,7 +7,6 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { spawnSync } from "child_process";
 import { basename, dirname } from "path";
 
 // Parse YAML frontmatter from markdown
@@ -30,51 +29,10 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, string
   return { frontmatter, body: match[2] };
 }
 
-// Call AI for peer review (legacy local fallback - prefer tkn-aipeerreview MCP server)
-async function getAIPeerReview(plan: string): Promise<string> {
-  const prompt = `Review this implementation plan critically. Focus on:
-1. Missing steps or considerations
-2. Potential bugs or edge cases
-3. Security concerns
-4. Performance implications
-5. Better alternatives
-
-Be concise but thorough. If the plan is solid, say so briefly.
-
-PLAN:
-${plan}`;
-
-  // Try GitHub Copilot first (using spawn to avoid shell injection)
-  try {
-    const result = spawnSync("gh", ["copilot", "explain", prompt], {
-      encoding: "utf-8",
-      timeout: 90000,
-      maxBuffer: 1024 * 1024,
-    });
-    if (result.status === 0 && result.stdout?.trim()) {
-      return result.stdout.trim();
-    }
-  } catch {
-    // Copilot not available
-  }
-
-  // Try Gemini CLI (using spawn with stdin to avoid shell injection)
-  try {
-    const result = spawnSync("gemini", ["-p", "Review this implementation plan critically"], {
-      input: prompt,
-      encoding: "utf-8",
-      timeout: 90000,
-      maxBuffer: 1024 * 1024,
-    });
-    if (result.status === 0 && result.stdout?.trim()) {
-      return result.stdout.trim();
-    }
-  } catch {
-    // Gemini not available
-  }
-
-  // No AI available - return placeholder
-  return "_AI peer review not available locally. Use tkn-aipeerreview MCP server for multi-model review._";
+// AI peer review is handled by tkn-aipeerreview MCP server.
+// This stub returns guidance for manual review via MCP tools.
+async function getAIPeerReview(_plan: string): Promise<string> {
+  return "_Automated peer review not available in this context. Use `tkn-aipeerreview` MCP server tools (`peer_review` or `quick_review`) for multi-model review._";
 }
 
 // Generate implementation plan from spec
