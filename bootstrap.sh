@@ -7,7 +7,7 @@
 # Phase 2: Install configuration from this repo into the active profile
 #
 # Usage:
-#   1. Clone this repo: git clone https://github.com/ample-engineer/.claude.git ~/.claude-profile
+#   1. Clone this repo: git clone https://github.com/ThomkerNet/.claude-profile.git ~/.claude-profile
 #   2. Run: cd ~/.claude-profile && ./bootstrap.sh
 #
 

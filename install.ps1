@@ -7,7 +7,7 @@
 # - All dependencies
 #
 # Usage:
-#   irm https://raw.githubusercontent.com/ample-engineer/.claude/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/ThomkerNet/.claude-profile/main/install.ps1 | iex
 # Or after cloning:
 #   cd ~/.claude; .\install.ps1
 
@@ -19,7 +19,7 @@ function Write-Warn { param($msg) Write-Host "⚠ $msg" -ForegroundColor Yellow 
 function Write-Err { param($msg) Write-Host "✗ $msg" -ForegroundColor Red }
 
 $ClaudeHome = "$env:USERPROFILE\.claude"
-$RepoUrl = "https://github.com/ample-engineer/.claude.git"
+$RepoUrl = "https://github.com/ThomkerNet/.claude-profile.git"
 
 Write-Host ""
 Write-Host "╔════════════════════════════════════════════╗" -ForegroundColor Cyan

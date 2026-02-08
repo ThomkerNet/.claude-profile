@@ -1,6 +1,8 @@
+> **ARCHIVED:** This plan has been implemented. See `skills/imagen/SKILL.md` and `commands/imagen.md` for the current `/imagen` skill (Azure DALL-E 3 primary, Gemini fallback).
+
 # Plan: Gemini Image Generation Skill
 
-**Status:** Implemented (pending API key configuration for testing)
+**Status:** Implemented
 
 ## Overview
 

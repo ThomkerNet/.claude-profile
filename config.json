@@ -1,3 +1,3 @@
 {
-  "installMethod": "winget"
+  "installMethod": "apt"
 }

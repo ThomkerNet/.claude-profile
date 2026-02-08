@@ -27,7 +27,7 @@ This profile uses a **two-phase setup** to avoid conflicts with Claude's initial
 ### macOS / Linux
 ```bash
 # Clone to staging location (NOT ~/.claude)
-git clone https://github.com/ample-engineer/.claude-profile.git ~/.claude-profile
+git clone https://github.com/ThomkerNet/.claude-profile.git ~/.claude-profile
 
 # Run bootstrap (handles login + config install)
 cd ~/.claude-profile
@@ -37,7 +37,7 @@ cd ~/.claude-profile
 ### Windows (PowerShell)
 ```powershell
 # Clone to staging location
-git clone https://github.com/ample-engineer/.claude-profile.git $HOME\.claude-profile
+git clone https://github.com/ThomkerNet/.claude-profile.git $HOME\.claude-profile
 
 # Run bootstrap
 cd $HOME\.claude-profile

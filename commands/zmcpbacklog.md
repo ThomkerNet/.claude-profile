@@ -101,7 +101,7 @@ Create issue in `TKNet-MCPServer` repository:
 
 ```bash
 gh issue create \
-  --repo "ample-engineer/TKNet-MCPServer" \
+  --repo "ThomkerNet/TKNet-MCPServer" \
   --title "MCP Backlog: <summary>" \
   --body "$(cat <<'EOF'
 ## Session Analysis
@@ -218,7 +218,7 @@ OR if opportunities found:
 
 📤 Creating GitHub issue...
    → Issue #42: "MCP Backlog: Azure + Webhooks"
-   → URL: https://github.com/ample-engineer/TKNet-MCPServer/issues/42
+   → URL: https://github.com/ThomkerNet/TKNet-MCPServer/issues/42
 
 ✨ Done! Backlog items logged for future implementation.
 ```

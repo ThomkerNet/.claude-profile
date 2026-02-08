@@ -1,6 +1,6 @@
 [Unit]
 Description=Obsidian Vault Git Sync Timer
-Documentation=https://github.com/ample-engineer/.claude
+Documentation=https://github.com/ThomkerNet/.claude-profile
 Requires=obsidian-git-sync.service
 
 [Timer]

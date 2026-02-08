@@ -1,8 +1,10 @@
+> **ARCHIVED:** This implementation plan was superseded by the simplified `/bwdangerunlock` approach (2026-02-08). The two-tier scoped collection model was never implemented.
+
 # Implementation Plan: Vaultwarden Access Refactor (v2)
 
 **Spec Reference:** `plans/SPEC-VAULTWARDEN-ACCESS-REFACTOR.md`
 **Date:** 2026-01-05
-**Status:** Revised after AI Peer Review
+**Status:** Archived (never implemented)
 **Reviewers:** GPT-5.1, Gemini-3-Pro-Preview
 
 ---

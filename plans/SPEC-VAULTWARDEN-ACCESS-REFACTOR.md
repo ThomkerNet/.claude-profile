@@ -1,6 +1,8 @@
+> **ARCHIVED:** This spec was superseded by the simplified `/bwdangerunlock` approach (2026-02-08). The two-tier scoped collection model was never implemented. See `skills/bwdangerunlock/SKILL.md` for current approach.
+
 # SPEC: Vaultwarden Access Refactor
 
-**Status:** Ready for Implementation
+**Status:** Archived (never implemented)
 **Priority:** High
 **Created:** 2026-01-05
 **Architecture Doc:** `/Users/sbarker/git-bnx/BNX-Docs-Architecture/infrastructure/VAULTWARDEN_ACCESS.md`

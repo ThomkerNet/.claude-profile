@@ -158,8 +158,7 @@ Additional context from the originating agent.
 
 ### Phase 2: Notification & Registry
 1. Implement pending specs JSON registry
-2. Add Telegram notification for new specs
-3. Update statusline to show pending spec count
+2. Update statusline to show pending spec count
 
 ### Phase 3: Processing Skill
 1. Create `/process-spec` skill
@@ -205,4 +204,4 @@ Additional context from the originating agent.
 1. Should specs be in a central `~/.claude/specs/` or per-project `.claude-specs/`?
 2. Should idle detection auto-prompt, or just show indicator?
 3. Should processed specs be archived or deleted?
-4. What AI should do the peer review (Copilot, Gemini, both)?
+4. Which review type should be used via `tkn-aipeerreview` MCP server?

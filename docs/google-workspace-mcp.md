@@ -1,12 +1,14 @@
 # Google Workspace MCP Server Setup
 
+> **Note (2026-02-08):** Gmail access is now provided by the `tkn-gmail` MCP server (37 tools, Tailscale HTTPS). The Google Workspace MCP server below was never fully deployed. This doc is retained as reference for future Drive/Calendar/Docs integration.
+
 ## Overview
 
 Provides Claude Code access to:
-- **Gmail**: Read emails, search, send
-- **Drive**: List, read, create files
-- **Calendar**: View, create events
-- **Docs/Sheets**: Read and edit
+- **Gmail**: **Now handled by `tkn-gmail` MCP server** (simonbarker@gmail.com)
+- **Drive**: List, read, create files (not yet deployed)
+- **Calendar**: View, create events (not yet deployed)
+- **Docs/Sheets**: Read and edit (not yet deployed)
 
 ## Configuration
 
@@ -80,7 +82,7 @@ Or use direct links:
 
 ### 5. Store Credentials
 
-Add to `~/.claude/secrets.json`:
+Add to `~/.claude-profile/secrets.json` (gitignored):
 
 ```json
 {

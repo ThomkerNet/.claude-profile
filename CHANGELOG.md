@@ -2,51 +2,55 @@
 
 All notable changes to this Claude Code profile are documented here.
 
+## [2026-02-08]
+
+### Changed
+- **MCP server connectivity**: All TKN servers now use Tailscale HTTPS (`mcp-remote` via `gate-hexatonic.ts.net`)
+- **AI Peer Review**: Migrated from local scripts to `tkn-aipeerreview` MCP server
+- **Bitwarden access**: Consolidated to `/bwdangerunlock` only (removed `/bw-ref`, `/vault-*` commands)
+- **Profile cleanup**: Removed stale references to Copilot CLI, Gemini CLI, Telegram, LiteLLM
+
+### Removed
+- `commands/aipeerreview.md`, `commands/review.md` - replaced by MCP server tools
+- `scripts/aipeerreview/` - 6 TypeScript files (~1200 lines) replaced by MCP server
+- `skills/solution-review/`, `skills/bw-ref/` - consolidated
+- Gemini CLI and Copilot CLI installation from `install.ps1` and `setup.sh`
+- LiteLLM environment variables from setup scripts and secrets template
+
+### Added
+- `tkn-gmail` MCP server (37 tools, Tailscale HTTPS)
+- `tkn-komodo`, `tkn-authentik`, `tkn-firecrawl` MCP servers
+- `/tts` skill for Azure AI Speech text-to-speech
+- `/zcicd`, `/zdoc`, `/zmcpbacklog` commands
+- Expanded Bitwarden security guardrails (8 specific rules)
+
+## [2026-02-01]
+
+### Added
+- **MCP DSC Operations**: `--mcpdsc` flag in `setup.sh` for programmatic MCP server management
+- `/zupdatetknmcpservers` skill: Auto-sync deployed TKN MCP servers from compose.yaml
+- `tkn-haos` and `tkn-media` MCP servers
+
+## [2026-01-31]
+
+### Changed
+- **Model routing**: Added `opusplan` model (Opus for plan mode, Sonnet for execution)
+- **Cross-platform fix**: Replaced hardcoded macOS paths with portable `~` tilde expansion
+
 ## [2026-01-01]
 
 ### Added
-- **Firecrawl API key**: Configured Firecrawl MCP server with personal API key for usage tracking
+- **Firecrawl API key**: Configured Firecrawl MCP server with personal API key
 
 ## [2025-12-31]
 
 ### Added
-- **Memory MCP Server**: Persistent knowledge graph across sessions using `@modelcontextprotocol/server-memory`
-  - Stores entities, relations, and observations
-  - Memory file gitignored (machine-specific)
-- **Vault write operations**: `api-create` and `api-update` commands for credential management
-- **Context7 documentation**: Guidelines for when to use Context7 vs training knowledge vs web search
-
-### Changed
-- Vault security hardening: password redaction, session TTL (30 min default), audit logging
-- Combined vault unlock + start into single `/vault-start` command
-
-### Fixed
-- API response parsing for nested Bitwarden data structure
+- **Memory MCP Server**: Persistent knowledge graph across sessions
+- **Context7 documentation**: Guidelines for library documentation lookups
 
 ## [2025-12-30]
 
 ### Added
-- Individual vault slash commands: `/vault`, `/vault-start`, `/vault-stop`, `/vault-get`, `/vault-search`
-- Autonomous vault access via `bw serve` REST API on localhost:8087
-
-## [2025-12-29]
-
-### Added
-- GitHub Copilot CLI integration for terminal assistance
-- Vaultwarden integration for self-hosted password vault access
-- Template-based slash command generation for portability
-
-### Changed
-- Use interactive login for Vaultwarden (master password not stored)
-- Gitignore generated slash commands (use `.template.md` versions)
-
-## [2025-12-28]
-
-### Added
-- Telegram two-way integration with remote control via bot
-- Multi-LLM setup: Claude Code, Gemini CLI, Copilot CLI
-- Portable profile structure for Windows/macOS/Linux
-
-### Changed
-- Template-based settings.json generation
-- Cross-platform bun detection in setup scripts
+- **v2.0 Architecture**: Two-phase setup (`~/.claude-profile/` repo + `~/.claude/` runtime)
+- Cross-platform support (Windows, macOS, Linux)
+- Status line with model, git branch, session label, token usage

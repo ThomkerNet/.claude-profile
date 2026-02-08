@@ -1,6 +1,6 @@
 [Unit]
 Description=Obsidian Vault Git Sync
-Documentation=https://github.com/ample-engineer/.claude
+Documentation=https://github.com/ThomkerNet/.claude-profile
 After=network-online.target
 Wants=network-online.target
 

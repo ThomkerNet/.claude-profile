@@ -1,6 +1,6 @@
 [Unit]
 Description=Claude Spec Watcher - Scan for new spec files
-Documentation=https://github.com/ample-engineer/.claude
+Documentation=https://github.com/ThomkerNet/.claude-profile
 After=network.target
 
 [Service]

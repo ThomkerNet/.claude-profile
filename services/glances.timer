@@ -1,6 +1,6 @@
 [Unit]
 Description=Run Claude Code Glances Stats Collector every minute
-Documentation=https://github.com/ample-engineer/.claude
+Documentation=https://github.com/ThomkerNet/.claude-profile
 
 [Timer]
 OnBootSec=30

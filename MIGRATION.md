@@ -45,7 +45,7 @@ cp -r ~/.claude/projects ~/projects.backup
 ```bash
 # Clone to the new staging location
 # NOTE: Change URL to .claude-profile if repo was renamed
-git clone https://github.com/ample-engineer/.claude.git ~/.claude-profile
+git clone https://github.com/ThomkerNet/.claude-profile.git ~/.claude-profile
 
 # Or if you already have a backup folder with the repo:
 mv ~/.claude.backup.1767693620 ~/.claude-profile
@@ -252,11 +252,11 @@ rm -rf ~/.claude.backup.* ~/.claude.fresh
 ## FAQ
 
 ### Do I need to rename the GitHub repo?
-**Recommended.** Rename `ample-engineer/.claude` → `ample-engineer/.claude-profile` to match the new convention. Update your clone:
+**Recommended.** Rename `ThomkerNet/.claude-profile` → `ThomkerNet/.claude-profile-profile` to match the new convention. Update your clone:
 
 ```bash
 cd ~/.claude-profile
-git remote set-url origin https://github.com/ample-engineer/.claude-profile.git
+git remote set-url origin https://github.com/ThomkerNet/.claude-profile-profile.git
 ```
 
 ### Will this affect my existing Claude sessions?
@@ -279,7 +279,7 @@ But this defeats the purpose of the two-phase architecture.
 If you run into issues during migration:
 1. Check your backups are complete (credentials, plans, todos)
 2. Review the troubleshooting section above
-3. Open an issue: https://github.com/ample-engineer/.claude-profile/issues
+3. Open an issue: https://github.com/ThomkerNet/.claude-profile-profile/issues
 
 ## Summary
 
