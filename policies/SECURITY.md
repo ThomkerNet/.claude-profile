@@ -46,8 +46,8 @@
 Load `/bwdangerunlock` for vault access details.
 
 **Quick reference:**
-- **Personal vault:** Development credentials, API keys
-- **Work vault:** Production secrets, shared team credentials
+- **Single vault** (TKN): All credentials - API keys, service passwords, infrastructure secrets
+- Access granted per-session via operator-placed session token at `~/.bwunlockmaster`
 
 ---
 

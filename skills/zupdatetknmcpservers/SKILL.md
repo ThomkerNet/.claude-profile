@@ -87,24 +87,26 @@ If not in README:
 
 ## Output Format
 
-Each server entry:
+Each server entry uses `npx -y mcp-remote` with Tailscale HTTPS:
 ```json
 {
   "name": "tkn-cloudflare",
-  "transport": "sse",
-  "url": "http://10.0.0.2:8200/sse",
-  "description": "DNS and zone management"
+  "command": "npx -y mcp-remote https://mcp-<hostname>.gate-hexatonic.ts.net/sse",
+  "description": "DNS and zone management (Tailscale HTTPS)"
 }
 ```
+
+**Tailscale hostname mapping:** The hostname in the URL (e.g. `mcp-tkn-bnx-cloudflare`, `mcp-unraid`) is configured in Tailscale serve config, NOT derived from compose.yaml port numbers. For existing servers, **preserve the current URL from mcp-servers.json**. For NEW servers that don't yet have an entry, flag them with a `TODO` comment and the port number so the operator can configure Tailscale serve.
 
 ## Important Rules
 
 1. **Only update TKN/BNX servers** - Don't touch memory, context7, puppeteer, sequential-thinking
 2. **Match by name, not port** - When looking up descriptions in README
-3. **Verify ports match** - Both sides of `"XXXX:YYYY"` should be the same for SSE
+3. **Preserve existing URLs** - TKN servers use Tailscale HTTPS hostnames configured outside compose.yaml
 4. **Skip commented lines** - Lines starting with `#` in compose.yaml
 5. **Remove orphans** - TKN/BNX servers in JSON but not in compose.yaml
-6. **Preserve order** - Keep non-TKN servers at the top, TKN servers in port order
+6. **Preserve order** - Keep non-TKN servers at the top, TKN servers alphabetically
+7. **Use command field** - Format: `"command": "npx -y mcp-remote <URL>"` (not transport/url fields)
 
 ## Example Execution
 
@@ -127,25 +129,24 @@ ports:
 {
   "servers": [
     {"name": "memory", "command": "..."},
-    {"name": "tkn-cloudflare", "transport": "sse", "url": "http://10.0.0.2:8200/sse", "description": "DNS and zone management"},
-    {"name": "tkn-media", "transport": "sse", "url": "http://10.0.0.2:8207/sse", "description": "Plex, Jellyfin"}
+    {"name": "tkn-cloudflare", "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse", "description": "DNS and zone management"}
   ]
 }
 ```
 
-**Output: mcp-servers.json (after)**
+**Output: mcp-servers.json (after)** (tkn-media is new in compose.yaml)
 ```json
 {
   "servers": [
     {"name": "memory", "command": "..."},
-    {"name": "tkn-cloudflare", "transport": "sse", "url": "http://10.0.0.2:8200/sse", "description": "DNS and zone management"},
-    {"name": "tkn-media", "transport": "sse", "url": "http://10.0.0.2:8221/sse", "description": "Plex, Jellyfin"}
+    {"name": "tkn-cloudflare", "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse", "description": "DNS and zone management"},
+    {"name": "tkn-media", "command": "TODO: configure Tailscale serve for port 8221, then set URL here", "description": "Plex, Jellyfin (Tailscale HTTPS)"}
   ]
 }
 ```
 
 **Report:**
-- Updated: 1 server (tkn-media port 8207 → 8221)
+- Added: 1 server (tkn-media - needs Tailscale hostname config, port 8221)
 - Unchanged: 1 server (tkn-cloudflare)
 
 ## Implementation Steps

@@ -137,78 +137,6 @@ if (Get-Command claude -ErrorAction SilentlyContinue) {
     }
 }
 
-# Check/Install Gemini CLI
-if (Get-Command gemini -ErrorAction SilentlyContinue) {
-    Write-Success "Gemini CLI installed"
-} else {
-    Write-Info "Installing Gemini CLI..."
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
-        try {
-            npm install -g @google/gemini-cli 2>$null
-            if (Get-Command gemini -ErrorAction SilentlyContinue) {
-                Write-Success "Gemini CLI installed"
-                Write-Info "Run 'gemini' to login interactively on first use"
-            } else {
-                Write-Warn "Gemini CLI install may have failed"
-                Write-Info "Try manually: npm install -g @google/gemini-cli"
-            }
-        } catch {
-            Write-Warn "Could not install Gemini CLI: $_"
-            Write-Info "Install manually: npm install -g @google/gemini-cli"
-        }
-    } else {
-        Write-Warn "npm not found, skipping Gemini CLI install"
-        Write-Info "Install Node.js first, then: npm install -g @google/gemini-cli"
-    }
-}
-
-# Check/Install GitHub Copilot CLI (for terminal assistance & GitHub operations)
-$CopilotInstalled = $false
-if (Get-Command copilot -ErrorAction SilentlyContinue) {
-    Write-Success "GitHub Copilot CLI installed"
-    $CopilotInstalled = $true
-} else {
-    Write-Info "Installing GitHub Copilot CLI..."
-    # Try winget first (preferred on Windows)
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        try {
-            winget install --id GitHub.Copilot -e --source winget --accept-package-agreements --accept-source-agreements 2>$null
-            # Refresh PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-            if (Get-Command copilot -ErrorAction SilentlyContinue) {
-                Write-Success "GitHub Copilot CLI installed via winget"
-                $CopilotInstalled = $true
-            }
-        } catch {
-            Write-Warn "winget install failed, trying npm..."
-        }
-    }
-
-    # Fall back to npm
-    if (-not $CopilotInstalled -and (Get-Command npm -ErrorAction SilentlyContinue)) {
-        try {
-            npm install -g @github/copilot 2>$null
-            # Refresh PATH
-            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-            if (Get-Command copilot -ErrorAction SilentlyContinue) {
-                Write-Success "GitHub Copilot CLI installed via npm"
-                $CopilotInstalled = $true
-            } else {
-                Write-Warn "GitHub Copilot CLI installed but not in PATH yet (restart terminal)"
-                $CopilotInstalled = $true
-            }
-        } catch {
-            Write-Warn "Could not install GitHub Copilot CLI: $_"
-            Write-Info "Install manually: winget install GitHub.Copilot"
-            Write-Info "  or: npm install -g @github/copilot"
-            Write-Info "Requires GitHub Copilot Pro subscription"
-        }
-    } elseif (-not $CopilotInstalled) {
-        Write-Warn "winget and npm not available, skipping GitHub Copilot CLI install"
-        Write-Info "Install manually: winget install GitHub.Copilot"
-    }
-}
-
 # Check/Install Bitwarden CLI (for Vaultwarden)
 $BwInstalled = $false
 if (Get-Command bw -ErrorAction SilentlyContinue) {
@@ -328,16 +256,6 @@ if (Test-Path $SecretsPath) {
             Write-Success "Firecrawl API key set as user environment variable"
         }
 
-        # Set LiteLLM config as environment variables
-        if ($secrets.litellm.base_url) {
-            [System.Environment]::SetEnvironmentVariable('LITELLM_BASE_URL', $secrets.litellm.base_url, 'User')
-            Write-Success "LiteLLM base URL set"
-        }
-        if ($secrets.litellm.api_key) {
-            [System.Environment]::SetEnvironmentVariable('LITELLM_API_KEY', $secrets.litellm.api_key, 'User')
-            Write-Success "LiteLLM API key set"
-        }
-
         Write-Success "Secrets applied"
     } catch {
         Write-Warn "Could not parse secrets.json: $_"
@@ -397,24 +315,6 @@ Write-Host "  FIRECRAWL_API_KEY   - For Firecrawl MCP server"
 Write-Host ""
 Write-Info "Set via: [System.Environment]::SetEnvironmentVariable('VAR', 'value', 'User')"
 
-# Step 8: Gemini & Copilot login reminders
-Write-Host ""
-Write-Host "── Step 8: AI CLI Logins ──" -ForegroundColor Cyan
-
-if (Get-Command gemini -ErrorAction SilentlyContinue) {
-    Write-Info "Gemini CLI needs interactive login. Run:"
-    Write-Host "    gemini"
-    Write-Host "  and follow the prompts to authenticate with Google."
-}
-
-if ($CopilotInstalled) {
-    Write-Host ""
-    Write-Info "GitHub Copilot CLI needs GitHub authentication. Run:"
-    Write-Host "    copilot"
-    Write-Host "  and follow the prompts to login with your GitHub account."
-    Write-Host "  (Requires GitHub Copilot Pro subscription)"
-}
-
 # Done!
 Write-Host ""
 Write-Host "╔════════════════════════════════════════════╗" -ForegroundColor Green
@@ -426,15 +326,11 @@ Write-Host ""
 Write-Info "Next steps:"
 Write-Host "  1. Restart your terminal (to load new PATH/env vars)"
 Write-Host "  2. Run 'claude' to start Claude Code"
-Write-Host "  3. Run 'gemini' to login to Gemini (for second opinions)"
-if ($CopilotInstalled) {
-    Write-Host "  4. Run 'copilot' to login to GitHub Copilot (for terminal help)"
-}
 if ($BwInstalled) {
     Write-Host ""
     Write-Host "  Vaultwarden setup (one-time):"
     Write-Host "     bw login"
     Write-Host "     bw unlock"
-    Write-Host "  Then use /vault in Claude to access credentials"
+    Write-Host "  Then use /bwdangerunlock in Claude to access credentials"
 }
 Write-Host ""

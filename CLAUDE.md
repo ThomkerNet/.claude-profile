@@ -108,7 +108,11 @@ Load with `/<skill-name>`:
 | `/todoist-ref` | Todoist API examples, project IDs |
 | `/ultrathink` | Extended reasoning for complex problems |
 | `/z` | Zero-friction commit with AI-generated messages |
-| `/imagen` | Generate images via Google Gemini |
+| `/zcicd` | Zero-friction commit with CI/CD monitoring and auto-fix |
+| `/zdoc` | Zero-friction commit with Obsidian documentation |
+| `/zmcpbacklog` | Analyze session for MCP server opportunities |
+| `/imagen` | Generate images via Azure DALL-E 3 / Gemini |
+| `/tts` | Text-to-speech via Azure AI Speech |
 | `/zupdatetknmcpservers` | Sync deployed TKN MCP servers to claude-profile config |
 
 ---
@@ -207,24 +211,14 @@ See [QUICK_REF.md](reference/QUICK_REF.md) for more shortcuts and paths.
 
 ---
 
-## MCP Server Connectivity (CRITICAL)
+## MCP Server Connectivity
 
-**Nginx path-prefix proxying BREAKS MCP SSE protocol.** Do NOT use URLs like `http://10.0.0.2:8000/tkn-server/sse`.
-
-**Root cause:** MCP servers return absolute paths (`/messages/?session_id=xxx`) in SSE responses. When behind an nginx path-prefix proxy (`/tkn-server/`), the client resolves `/messages/` against the host root, losing the prefix. The POST to `/messages/` hits nginx's default handler instead of the MCP server.
-
-**Correct pattern:** Connect directly to container ports via `mcp-remote`:
+TKN MCP servers connect via **Tailscale HTTPS** using `mcp-remote`:
 ```
-npx -y mcp-remote http://10.0.0.2:<PORT>/sse --allow-http
+npx -y mcp-remote https://mcp-<name>.gate-hexatonic.ts.net/sse
 ```
 
-| Server | Port | URL |
-|--------|------|-----|
-| tkn-cloudflare | 8200 | `http://10.0.0.2:8200/sse` |
-| tkn-unraid | 8201 | `http://10.0.0.2:8201/sse` |
-| tkn-aipeerreview | 8202 | `http://10.0.0.2:8202/sse` |
-
-**Never** route MCP connections through nginx path-prefix proxy. Always use direct port access.
+All server URLs are defined in `~/.claude-profile/mcp-servers.json`. Use `/zupdatetknmcpservers` to sync with deployed servers.
 
 ---
 

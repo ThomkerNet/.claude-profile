@@ -30,17 +30,7 @@ Enable multiple Claude agents on the same machine to share work specifications v
 │                                                                  │
 │  - Watches for new *-SPEC.md files                              │
 │  - Detects which project directory each belongs to              │
-│  - Sends notification via Telegram                              │
 │  - Records pending specs in ~/.claude/.pending-specs.json       │
-└─────────────────────────────────────────────────────────────────┘
-         │
-         │  Telegram notification
-         ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    User Notification                             │
-│                                                                  │
-│  "New spec detected: feature-x-SPEC.md in ~/project-y"          │
-│  "Run /process-spec to review and implement"                    │
 └─────────────────────────────────────────────────────────────────┘
          │
          │  User runs /process-spec
@@ -51,7 +41,7 @@ Enable multiple Claude agents on the same machine to share work specifications v
 │  1. List pending specs, let user select                         │
 │  2. Read and summarize the spec                                 │
 │  3. Create detailed implementation plan                         │
-│  4. AI peer review (via Copilot/Gemini)                         │
+│  4. AI peer review (via tkn-aipeerreview MCP server)             │
 │  5. Present summary and ask for approval                        │
 │  6. Mark spec as processed                                      │
 └─────────────────────────────────────────────────────────────────┘
@@ -102,7 +92,6 @@ Additional context from the originating agent.
 - On new file detection:
   - Validates format (has frontmatter, required fields)
   - Records in `~/.claude/.pending-specs.json`
-  - Sends Telegram notification (if configured)
 - Runs via launchd (macOS) / systemd (Linux)
 
 **launchd plist:** `com.claude.spec-watcher.plist`
@@ -154,11 +143,7 @@ Additional context from the originating agent.
    - After 5 min idle, statusline shows "Pending specs: 2"
    - User sees visual indicator
 
-2. **Telegram polling:**
-   - Spec watcher sends "You have pending specs" every 5 min if idle
-   - User can respond via Telegram to trigger processing
-
-3. **Auto-prompt hook:**
+2. **Auto-prompt hook:**
    - Hook checks for pending specs on each user prompt
    - If specs exist, adds reminder to response
 
@@ -180,7 +165,7 @@ Additional context from the originating agent.
 1. Create `/process-spec` skill
 2. Implement spec parsing (YAML frontmatter + markdown)
 3. Implement implementation plan generation
-4. Integrate AI peer review (copilot/gemini)
+4. Integrate AI peer review (via `tkn-aipeerreview` MCP server tools)
 5. Add approval workflow
 
 ### Phase 4: Polish & Integration

@@ -6,15 +6,5 @@
     "command": "{{STATUSLINE_PATH}}"
   },
   "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bun run {{CLAUDE_HOME}}/hooks/spec-checker/index.ts"
-          }
-        ]
-      }
-    ]
   }
 }

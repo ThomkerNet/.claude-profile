@@ -1,11 +1,11 @@
-Generate images using Google Gemini's native image generation.
+Generate images using Azure DALL-E 3 (primary) or Google Gemini (fallback).
 
 ## Workflow
 
 1. **Clarify Intent** - Ask about subject, style, mood, aspect ratio
 2. **Build Specification** - Create detailed prompt with enhancements
 3. **Confirm** - Show spec and get user approval before generating
-4. **Generate** - Call Gemini API with enhanced prompt
+4. **Generate** - Call Azure DALL-E 3 (or Gemini fallback) with enhanced prompt
 5. **Iterate** - Refine based on user feedback
 
 ## Intent Clarification
@@ -34,7 +34,26 @@ Before generating, use AskUserQuestion to clarify:
 
 ## Generation
 
-After user confirms spec, generate using:
+### Azure DALL-E 3 (Primary - No Geographic Restrictions)
+
+```bash
+AZURE_OPENAI_KEY=$(az keyvault secret show --vault-name kv-bnx-shared --name openai-api-key --query value -o tsv)
+
+curl -s -X POST \
+  "https://oai-bnx-shared.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01" \
+  -H "api-key: $AZURE_OPENAI_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "ENHANCED_PROMPT",
+    "size": "1024x1024",
+    "quality": "standard",
+    "n": 1
+  }'
+```
+
+DALL-E 3 sizes: `1024x1024`, `1792x1024` (landscape), `1024x1792` (portrait)
+
+### Gemini (Fallback - Geographic Restrictions Apply)
 
 ```bash
 curl -s -X POST \
@@ -49,11 +68,10 @@ curl -s -X POST \
 
 ## Output Handling
 
-1. Parse JSON response for `candidates[0].content.parts`
-2. Find part with `inlineData.data` (base64 PNG)
-3. Decode and save to `~/.claude/output/images/imagen-TIMESTAMP.png`
-4. Use Read tool to display image to user
-5. Offer iteration options
+**Azure:** Parse `data[0].url` (temporary URL ~1 hour), download and save.
+**Gemini:** Parse `candidates[0].content.parts` for `inlineData.data` (base64 PNG), decode and save.
+
+Save to `~/.claude/output/images/imagen-TIMESTAMP.png`, then use Read tool to display.
 
 ## Iteration
 
@@ -63,13 +81,6 @@ After generation, offer:
 - Add/remove elements
 - Adjust composition
 - Try different aspect ratio
-
-## Credential Check
-
-Before first generation, verify `$GEMINI_API_KEY` is set:
-```bash
-[ -n "$GEMINI_API_KEY" ] && echo "API key configured" || echo "Set GEMINI_API_KEY from https://aistudio.google.com/apikey"
-```
 
 ## Examples
 

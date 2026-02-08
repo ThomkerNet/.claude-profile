@@ -6,7 +6,7 @@ A portable, self-contained Claude Code configuration that works on Windows, macO
 
 ## Features
 
-- **MCP Servers** - Pre-configured Context7, Puppeteer, Sequential Thinking, Firecrawl, AI Peer Review
+- **MCP Servers** - Pre-configured Context7, Puppeteer, Sequential Thinking, Memory, plus TKN homelab servers via Tailscale
 - **Slash Commands** - `/cname`, `/z`, `/zcicd`, `/zdoc`
 - **Status Line** - Cross-platform status bar with model, directory, git branch, and custom labels
 - **Portable** - Clone once, sync everywhere. Config stays in sync via git, runtime data stays local.
