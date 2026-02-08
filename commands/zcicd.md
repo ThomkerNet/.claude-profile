@@ -171,10 +171,8 @@ If the automatic fix didn't resolve the issue:
    - Relevant source files
    - Recent changes that may have caused the issue
 
-2. **Run peer review:**
-   ```
-   /aipeerreview -t bug <failing_files>
-   ```
+2. **Run peer review via MCP server:**
+   Use `tkn-aipeerreview` MCP tools (e.g. `peer_review` or `quick_review`) to get multi-model analysis of the failing code.
 
 3. **Apply peer review recommendations**
 

@@ -559,15 +559,7 @@ ensure_profile_entry "ssh-truecolor" 'if [[ -n "$SSH_CONNECTION" && "$COLORTERM"
 
 # Apply secrets if available
 if [ -f "$REPO_DIR/secrets.json" ] && command -v jq &>/dev/null; then
-    # LiteLLM proxy config for AI peer review
-    LITELLM_URL=$(jq -r '.litellm.base_url // empty' "$REPO_DIR/secrets.json")
-    LITELLM_KEY=$(jq -r '.litellm.api_key // empty' "$REPO_DIR/secrets.json")
-    if [ -n "$LITELLM_URL" ]; then
-        ensure_profile_entry "LITELLM_BASE_URL" "export LITELLM_BASE_URL='$LITELLM_URL'"
-    fi
-    if [ -n "$LITELLM_KEY" ]; then
-        ensure_profile_entry "LITELLM_API_KEY" "export LITELLM_API_KEY='$LITELLM_KEY'"
-    fi
+    : # Placeholder for future secret loading
 fi
 
 # ============================================================================

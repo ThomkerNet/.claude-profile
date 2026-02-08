@@ -17,7 +17,7 @@ Retrieve from Bitwarden:
 bw get item "Todoist" | jq -r '.fields[] | select(.name=="API Key") | .value'
 ```
 
-Or use `/bw-ref` for full credential access patterns.
+Or use `/bwdangerunlock` for full credential access.
 
 ---
 

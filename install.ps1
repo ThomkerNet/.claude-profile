@@ -394,8 +394,6 @@ Write-Host "── Step 7: Environment Variables ──" -ForegroundColor Cyan
 
 Write-Info "The following environment variables may be needed:"
 Write-Host "  FIRECRAWL_API_KEY   - For Firecrawl MCP server"
-Write-Host "  LITELLM_BASE_URL    - For AI peer review"
-Write-Host "  LITELLM_API_KEY     - For AI peer review"
 Write-Host ""
 Write-Info "Set via: [System.Environment]::SetEnvironmentVariable('VAR', 'value', 'User')"
 

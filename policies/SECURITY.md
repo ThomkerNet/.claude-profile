@@ -15,7 +15,7 @@
 ## Credential Flow
 
 ### Development
-- **Source:** Bitwarden vault (via `/bw-ref` skill)
+- **Source:** Bitwarden vault (via `/bwdangerunlock` skill)
 - **Access:** `bw` CLI with operator-provided session token
 - **Never commit:**
   - `.env` files (use `.env.example` for structure only)
@@ -43,7 +43,7 @@
 
 ## Bitwarden Architecture
 
-Load `/bw-ref` for complete two-vault architecture details.
+Load `/bwdangerunlock` for vault access details.
 
 **Quick reference:**
 - **Personal vault:** Development credentials, API keys
@@ -143,5 +143,5 @@ If credentials are accidentally committed:
 
 ## Questions?
 
-- Vault architecture: Load `/bw-ref`
+- Vault architecture: Load `/bwdangerunlock`
 - MCP server setup: Load `/profile-reference`

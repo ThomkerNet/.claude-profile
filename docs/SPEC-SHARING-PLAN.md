@@ -139,7 +139,7 @@ Additional context from the originating agent.
 2. **User selects** - Pick which spec to process
 3. **Read & summarize** - Parse spec, extract requirements
 4. **Create implementation plan** - Detailed step-by-step plan
-5. **AI peer review** - Call `copilot -p "Review this plan..."` or `/aipeerreview`
+5. **AI peer review** - Use `tkn-aipeerreview` MCP server tools for multi-model review
 6. **Present to user** - Summary + plan + review feedback
 7. **Get approval** - User confirms or requests changes
 8. **Mark processed** - Move to `.processed/` directory

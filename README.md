@@ -6,10 +6,8 @@ A portable, self-contained Claude Code configuration that works on Windows, macO
 
 ## Features
 
-- **MCP Servers** - Pre-configured Context7, Puppeteer, Sequential Thinking, Firecrawl
-- **AI Peer Review** - Multi-model code review via LiteLLM proxy
-- **Custom Skills** - Solution review skill for comprehensive code audits
-- **Slash Commands** - `/aipeerreview`, `/review`, `/cname`, `/z`
+- **MCP Servers** - Pre-configured Context7, Puppeteer, Sequential Thinking, Firecrawl, AI Peer Review
+- **Slash Commands** - `/cname`, `/z`, `/zcicd`, `/zdoc`
 - **Status Line** - Cross-platform status bar with model, directory, git branch, and custom labels
 - **Portable** - Clone once, sync everywhere. Config stays in sync via git, runtime data stays local.
 
@@ -58,7 +56,7 @@ cd $HOME\.claude-profile
 | `sync.sh` | Quick update script |
 | `commands/` | Slash commands |
 | `hooks/` | PostToolUse, UserPromptSubmit, Stop hooks |
-| `skills/` | Solution review skill |
+| `skills/` | On-demand reference skills |
 | `agents/` | Custom agents |
 | `statuslines/` | Cross-platform status line scripts |
 | `tools/` | Utility scripts (Bitwarden, Vaultwarden, etc.) |
@@ -110,8 +108,6 @@ Set these for full functionality:
 | Variable | Purpose |
 |----------|---------|
 | `FIRECRAWL_API_KEY` | Firecrawl MCP server |
-| `LITELLM_BASE_URL` | LiteLLM proxy URL for AI peer review |
-| `LITELLM_API_KEY` | LiteLLM API key |
 
 ### 3. Verify MCP Servers
 
@@ -126,9 +122,9 @@ claude mcp list
 | Command | Description |
 |---------|-------------|
 | `/cname <label>` | Set a custom session label in the status bar |
-| `/aipeerreview [file]` | Multi-model AI peer review of plans/code |
 | `/z [message]` | Zero-friction commit, push, and document |
-| `/review` | Comprehensive solution review |
+| `/zcicd [message]` | Zero-friction commit with CI/CD monitoring |
+| `/zdoc [message]` | Zero-friction commit with Obsidian documentation |
 
 ### Status Line
 
@@ -164,44 +160,6 @@ Use `/cname` to set a custom label for the current session:
 
 The custom label appears in the status line and is stored in `~/.claude/.session-label`
 
-### AI Peer Review (`/aipeerreview`)
-
-Get comprehensive peer reviews of your plans and code using multiple AI models simultaneously via LiteLLM proxy.
-
-#### What It Does
-
-Sends your code or plan to **three AI models in parallel** for comprehensive vetting:
-- **GPT-5.1** - Advanced reasoning and practical insights
-- **Gemini 3 Pro** - Multi-modal understanding and novel perspectives
-- **Gemini 2.5 Pro** - Comprehensive analysis and edge case detection
-
-#### Usage
-
-```bash
-/aipeerreview                         # Review git changes or most recent plan
-/aipeerreview -t security auth.ts     # Security review of specific file
-/aipeerreview --mode plan             # Review most recent plan
-```
-
-#### Review Types
-
-| Type | Focus Areas |
-|------|-------------|
-| `security` | Injection, auth, OWASP vulnerabilities |
-| `architecture` | Design patterns, scalability, coupling |
-| `bug` | Logic errors, edge cases, race conditions |
-| `performance` | Complexity, optimization, bottlenecks |
-| `api` | REST design, contracts, versioning |
-| `test` | Coverage gaps, mocking, assertions |
-| `general` | Broad code quality assessment |
-
-#### Features
-
-- **Parallel execution** - All 3 models run simultaneously
-- **Auto-detection** - Automatically finds git changes or plans
-- **Type-specific models** - Different model combinations for different review types
-- **Structured reviews** - Each model provides strengths, issues, recommendations
-
 ### Zero-Friction Commit (`/z`)
 
 Automate the entire commit → push → document workflow in one command.
@@ -221,12 +179,6 @@ Automate the entire commit → push → document workflow in one command.
 /z "Implement user auth"     # Commit with custom message
 ```
 
-### Skills
-
-| Skill | Trigger |
-|-------|---------|
-| `/review` | Comprehensive solution review with Gemini |
-
 ## File Structure
 
 ### Repository (`~/.claude-profile/`)
@@ -240,14 +192,12 @@ Automate the entire commit → push → document workflow in one command.
 ├── mcp-servers.json        # MCP servers to install
 ├── commands/               # Slash commands
 │   ├── cname.md
-│   ├── aipeerreview.md
-│   └── review.md
+│   ├── z.md
+│   └── zcicd.md
 ├── hooks/
 │   └── memory/             # Memory hooks
 ├── skills/
-│   └── solution-review/    # Code review skill
-├── scripts/
-│   └── aipeerreview/       # AI peer review implementation
+│   └── ultrathink/         # Extended reasoning skill
 ├── agents/                 # Custom agents
 ├── statuslines/
 │   ├── statusline.ps1      # PowerShell (Windows)

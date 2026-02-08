@@ -69,4 +69,3 @@ Write-Host "Setup complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Cyan
 Write-Host "  1. Restart Claude Code"
-Write-Host "  2. Use /aipeerreview for AI peer reviews"

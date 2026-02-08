@@ -323,7 +323,7 @@ docker logs -f cloudflare-tunnel
 
 ## Bitwarden (Credential Management)
 
-Load `/bw-ref` for complete vault architecture.
+Load `/bwdangerunlock` for vault access details.
 
 **Quick commands:**
 ```bash
@@ -555,4 +555,4 @@ alias azps='az containerapp list -o table'
 | **Infrastructure details** | `~/.claude/architecture/INFRASTRUCTURE.md` |
 | **Security/credentials** | `~/.claude/policies/SECURITY.md` |
 | **Homelab docs** | `~/git-bnx/TKN/TKNet-Homelab-Docs/` |
-| **Bitwarden usage** | Load `/bw-ref` |
+| **Bitwarden usage** | Load `/bwdangerunlock` |

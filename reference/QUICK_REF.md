@@ -36,11 +36,10 @@ Load with `/<skill-name>`:
 | Skill | Purpose | When to Use |
 |-------|---------|-------------|
 | `/profile-reference` | MCP servers, router, statusline | When you need detailed Claude profile feature docs |
-| `/bw-ref` | Bitwarden architecture | When working with credentials/secrets |
+| `/bwdangerunlock` | Full Bitwarden vault access | When working with credentials/secrets |
 | `/obsidian-ref` | Full vault structure | When navigating Obsidian in detail |
 | `/todoist-ref` | API examples, project IDs | When managing Todoist tasks |
 | `/ultrathink` | Extended reasoning | Complex architecture decisions, difficult debugging |
-| `/aipeerreview` | Multi-model code review | Security, architecture, bug reviews |
 | `/z` | Zero-friction commit | Quick commits with AI-generated messages |
 | `/imagen` | Image generation | Generate images via Gemini |
 

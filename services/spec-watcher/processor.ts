@@ -30,7 +30,7 @@ function parseFrontmatter(content: string): { frontmatter: Record<string, string
   return { frontmatter, body: match[2] };
 }
 
-// Call AI for peer review (tries copilot, then gemini, then skips)
+// Call AI for peer review (legacy local fallback - prefer tkn-aipeerreview MCP server)
 async function getAIPeerReview(plan: string): Promise<string> {
   const prompt = `Review this implementation plan critically. Focus on:
 1. Missing steps or considerations
@@ -74,7 +74,7 @@ ${plan}`;
   }
 
   // No AI available - return placeholder
-  return "_AI peer review not available. Please review manually or configure Copilot/Gemini._";
+  return "_AI peer review not available locally. Use tkn-aipeerreview MCP server for multi-model review._";
 }
 
 // Generate implementation plan from spec

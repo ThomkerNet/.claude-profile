@@ -103,11 +103,10 @@ Load with `/<skill-name>`:
 | Skill | Content |
 |-------|---------|
 | `/profile-reference` | MCP servers, router, statusline (Claude profile features) |
-| `/bw-ref` | Bitwarden two-vault architecture, credential access |
+| `/bwdangerunlock` | Full Bitwarden vault access (operator places session token) |
 | `/obsidian-ref` | Full vault structure, PARA method details |
 | `/todoist-ref` | Todoist API examples, project IDs |
 | `/ultrathink` | Extended reasoning for complex problems |
-| `/aipeerreview` | Multi-model code review (security, architecture, bugs) |
 | `/z` | Zero-friction commit with AI-generated messages |
 | `/imagen` | Generate images via Google Gemini |
 | `/zupdatetknmcpservers` | Sync deployed TKN MCP servers to claude-profile config |
@@ -186,7 +185,7 @@ See [QUICK_REF.md](reference/QUICK_REF.md) for more shortcuts and paths.
 ### Manage Credentials
 
 1. **Never** hardcode secrets
-2. Load credential from Bitwarden (use `/bw-ref` for architecture)
+2. Load credential from Bitwarden (use `/bwdangerunlock` when session token available)
 3. Use environment variables in code
 4. See [SECURITY.md](policies/SECURITY.md) for complete procedures
 
