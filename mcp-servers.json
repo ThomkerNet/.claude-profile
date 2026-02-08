@@ -63,6 +63,16 @@
       "name": "tkn-gmail",
       "command": "npx -y mcp-remote https://tkn-gmail.gate-hexatonic.ts.net/sse",
       "description": "Gmail for simonbarker@gmail.com (37 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-ollama",
+      "command": "npx -y mcp-remote https://mcp-tkn-ollama.gate-hexatonic.ts.net/sse",
+      "description": "Ollama model management - list, pull, delete models, health check (8 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-anythingllm",
+      "command": "npx -y mcp-remote https://mcp-tkn-anythingllm.gate-hexatonic.ts.net/sse",
+      "description": "AnythingLLM workspace, document, and user management (11 tools, Tailscale HTTPS)"
     }
   ]
 }
