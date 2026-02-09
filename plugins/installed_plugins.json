@@ -1,4 +1,15 @@
 {
   "version": 2,
-  "plugins": {}
+  "plugins": {
+    "voicemode@mbailey": [
+      {
+        "scope": "user",
+        "installPath": "/home/sbarker/.claude/plugins/cache/mbailey/voicemode/8.1.0p1",
+        "version": "8.1.0p1",
+        "installedAt": "2026-02-09T13:52:39.816Z",
+        "lastUpdated": "2026-02-09T13:52:39.816Z",
+        "gitCommitSha": "3cd62b8141de0c13ebcab98bc40e9e036fe734d1"
+      }
+    ]
+  }
 }
