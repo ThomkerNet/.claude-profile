@@ -55,6 +55,11 @@
       "description": "Gmail for simonbarker@gmail.com (37 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-github-actions",
+      "command": "npx -y mcp-remote https://mcp-github-actions.gate-hexatonic.ts.net/sse",
+      "description": "GitHub Actions CI/CD - workflow runs, logs, triggers (8 tools, Tailscale HTTPS)"
+    },
+    {
       "name": "tkn-komodo",
       "command": "npx -y mcp-remote https://mcp-komodo.gate-hexatonic.ts.net/sse",
       "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
