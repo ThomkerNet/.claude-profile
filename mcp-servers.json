@@ -30,29 +30,19 @@
       "description": "Step-by-step problem solving"
     },
     {
-      "name": "tkn-cloudflare",
-      "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse",
-      "description": "Cloudflare DNS, Zero Trust, Tunnels, DLP (116 tools, Tailscale HTTPS)"
-    },
-    {
-      "name": "tkn-unraid",
-      "command": "npx -y mcp-remote https://mcp-unraid.gate-hexatonic.ts.net/sse",
-      "description": "Unraid server management (Tailscale HTTPS)"
-    },
-    {
       "name": "tkn-aipeerreview",
       "command": "npx -y mcp-remote https://mcp-aipeer.gate-hexatonic.ts.net/sse",
       "description": "AI Peer Review - multi-model code review via LiteLLM (Tailscale HTTPS)"
     },
     {
-      "name": "tkn-komodo",
-      "command": "npx -y mcp-remote https://mcp-komodo.gate-hexatonic.ts.net/sse",
-      "description": "Komodo build and deployment management (86 tools, Tailscale HTTPS)"
-    },
-    {
       "name": "tkn-authentik",
       "command": "npx -y mcp-remote https://mcp-authentik.gate-hexatonic.ts.net/sse",
       "description": "Authentik identity provider management (Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-cloudflare",
+      "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse",
+      "description": "Cloudflare DNS, Zero Trust, Tunnels, DLP (116 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-firecrawl",
@@ -65,19 +55,19 @@
       "description": "Gmail for simonbarker@gmail.com (37 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-komodo",
+      "command": "npx -y mcp-remote https://mcp-komodo.gate-hexatonic.ts.net/sse",
+      "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-unraid",
+      "command": "npx -y mcp-remote https://mcp-unraid.gate-hexatonic.ts.net/sse",
+      "description": "Unraid server management (Tailscale HTTPS)"
+    },
+    {
       "name": "tkn-usage",
       "command": "npx -y mcp-remote https://mcp-usage.gate-hexatonic.ts.net/sse",
       "description": "API usage analytics - Anthropic usage/cost, Claude Code, Copilot billing (5 tools, Tailscale HTTPS)"
-    },
-    {
-      "name": "tkn-ollama",
-      "command": "npx -y mcp-remote https://mcp-tkn-ollama.gate-hexatonic.ts.net/sse",
-      "description": "Ollama model management - list, pull, delete models, health check (8 tools, Tailscale HTTPS)"
-    },
-    {
-      "name": "tkn-anythingllm",
-      "command": "npx -y mcp-remote https://mcp-tkn-anythingllm.gate-hexatonic.ts.net/sse",
-      "description": "AnythingLLM workspace, document, and user management (11 tools, Tailscale HTTPS)"
     }
   ]
 }
