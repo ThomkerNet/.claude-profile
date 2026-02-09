@@ -224,9 +224,38 @@ if [ -d "$specDir" ]; then
     fi
 fi
 
+# Read API usage from usage collector cache (tkn-usage MCP server)
+USAGE_CACHE="${CLAUDE_HOME:-$HOME/.claude}/.usage-cache.json"
+usageStr=""
+
+if [ -f "$USAGE_CACHE" ]; then
+    # Single jq call to read all values (avoid "in" — reserved keyword in jq)
+    usage_data=$(jq -c '{ts: (.timestamp // 0), cost: (.cost_usd // 0), input: (.input_tokens // 0), output: (.output_tokens // 0)}' "$USAGE_CACHE" 2>/dev/null)
+    cache_time=$(echo "$usage_data" | jq -r '.ts')
+    cache_age=$(( $(date +%s) - cache_time ))
+
+    # Use cache if less than 5 minutes old (collector runs every 60s)
+    if [ "$cache_age" -lt 300 ]; then
+        usage_cost=$(echo "$usage_data" | jq -r '.cost')
+        usage_tokens=$(echo "$usage_data" | jq -r '.input + .output')
+
+        if [ "$usage_cost" != "0" ] || [ "$usage_tokens" != "0" ]; then
+            # Format tokens as K/M (awk instead of bc for portability)
+            if [ "$usage_tokens" -ge 1000000 ]; then
+                usage_tok_fmt=$(awk -v t="$usage_tokens" 'BEGIN {printf "%.1fM", t/1000000}')
+            elif [ "$usage_tokens" -ge 1000 ]; then
+                usage_tok_fmt="$((usage_tokens / 1000))K"
+            else
+                usage_tok_fmt="$usage_tokens"
+            fi
+            usageStr=" | API:\$$(printf '%.2f' "$usage_cost")/${usage_tok_fmt}"
+        fi
+    fi
+fi
+
 # Output single-line formatted status
-# Format: [model] host:path [branch] | tokens (ctx%) quota | sys | specs | +lines -lines cost
-output=$(printf "%-8s %s:%s%s%s | %s (%s%%)%s%s%s | +%s -%s%s\n" \
+# Format: [model] host:path [branch] | tokens (ctx%) quota | sys | specs | usage | +lines -lines cost
+output=$(printf "%-8s %s:%s%s%s | %s (%s%%)%s%s%s%s | +%s -%s%s\n" \
     "[$model]" \
     "$HOSTNAME_SHORT" \
     "$currentDir" \
@@ -237,6 +266,7 @@ output=$(printf "%-8s %s:%s%s%s | %s (%s%%)%s%s%s | +%s -%s%s\n" \
     "$quotaStr" \
     "$sysStatsStr" \
     "$specStr" \
+    "$usageStr" \
     "$(echo "$data" | jq -r '.cost.total_lines_added // 0')" \
     "$(echo "$data" | jq -r '.cost.total_lines_removed // 0')" \
     "$costStr")

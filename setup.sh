@@ -570,6 +570,35 @@ chmod +x "$REPO_DIR/services/spec-watcher/watcher.sh" 2>/dev/null || true
 ensure_directory "$CLAUDE_HOME/.spec-plans"
 dsc_unchanged "tools:spec-watcher (available)"
 
+# Usage collector service (polls tkn-usage API for statusline)
+chmod +x "$REPO_DIR/services/usage-collector.sh" 2>/dev/null || true
+
+# Process templates and activate service (systemd timer on Linux, launchd on macOS)
+if [ "$DSC_PLATFORM" = "linux" ]; then
+    # Process templates for systemd units
+    USAGE_SERVICE_TMP=$(mktemp)
+    USAGE_TIMER_TMP=$(mktemp)
+    sed -e "s|{{CLAUDE_HOME}}|$CLAUDE_HOME|g" -e "s|{{HOME}}|$HOME|g" \
+        "$REPO_DIR/services/usage-collector.service" > "$USAGE_SERVICE_TMP"
+    sed -e "s|{{CLAUDE_HOME}}|$CLAUDE_HOME|g" -e "s|{{HOME}}|$HOME|g" \
+        "$REPO_DIR/services/usage-collector.timer" > "$USAGE_TIMER_TMP"
+
+    ensure_user_linger
+    ensure_systemd_service "usage-collector.service" "$USAGE_SERVICE_TMP"
+    ensure_systemd_service "usage-collector.timer" "$USAGE_TIMER_TMP"
+
+    rm -f "$USAGE_SERVICE_TMP" "$USAGE_TIMER_TMP"
+elif [ "$DSC_PLATFORM" = "mac" ]; then
+    # Process template for launchd plist
+    USAGE_PLIST_TMP=$(mktemp)
+    sed -e "s|{{CLAUDE_HOME}}|$CLAUDE_HOME|g" -e "s|{{HOME}}|$HOME|g" \
+        "$REPO_DIR/services/com.claude.usage-collector.plist" > "$USAGE_PLIST_TMP"
+
+    ensure_launchd_service "com.claude.usage-collector" "$USAGE_PLIST_TMP"
+
+    rm -f "$USAGE_PLIST_TMP"
+fi
+
 fi  # End of non-MCP setup steps
 
 # ============================================================================
