@@ -228,17 +228,18 @@ fi
 USAGE_CACHE="${CLAUDE_HOME:-$HOME/.claude}/.usage-cache.json"
 usageStr=""
 
-if [ -f "$USAGE_CACHE" ]; then
-    # Single jq call to read all values (avoid "in" — reserved keyword in jq)
-    usage_data=$(jq -c '{ts: (.timestamp // 0), cost: (.cost_usd // 0), input: (.input_tokens // 0), output: (.output_tokens // 0)}' "$USAGE_CACHE" 2>/dev/null)
-    cache_time=$(echo "$usage_data" | jq -r '.ts')
+if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
+    # Single jq call extracts all values and computes token sum (avoid "in" — reserved keyword in jq)
+    read -r cache_time usage_cost usage_tokens < <(
+        jq -r '[(.timestamp // 0), (.cost_usd // 0), ((.input_tokens // 0) + (.output_tokens // 0))] | @tsv' "$USAGE_CACHE" 2>/dev/null
+    )
+
+    # Validate cache_time is numeric before arithmetic
+    [[ "$cache_time" =~ ^[0-9]+$ ]] || cache_time=0
     cache_age=$(( $(date +%s) - cache_time ))
 
     # Use cache if less than 5 minutes old (collector runs every 60s)
     if [ "$cache_age" -lt 300 ]; then
-        usage_cost=$(echo "$usage_data" | jq -r '.cost')
-        usage_tokens=$(echo "$usage_data" | jq -r '.input + .output')
-
         if [ "$usage_cost" != "0" ] || [ "$usage_tokens" != "0" ]; then
             # Format tokens as K/M (awk instead of bc for portability)
             if [ "$usage_tokens" -ge 1000000 ]; then
@@ -248,7 +249,7 @@ if [ -f "$USAGE_CACHE" ]; then
             else
                 usage_tok_fmt="$usage_tokens"
             fi
-            usageStr=" | API:\$$(printf '%.2f' "$usage_cost")/${usage_tok_fmt}"
+            usageStr=" | API:\$$(LC_NUMERIC=C printf '%.2f' "$usage_cost")/${usage_tok_fmt}"
         fi
     fi
 fi
