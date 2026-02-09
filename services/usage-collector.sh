@@ -32,7 +32,7 @@ PARSED=$(echo "$SUMMARY" | jq -c '{
   cost: ([.data.anthropic_cost.data[]?.cost_usd] | add // 0),
   input_tokens: ([.data.anthropic_usage.data[]?.input_tokens] | add // 0),
   output_tokens: ([.data.anthropic_usage.data[]?.output_tokens] | add // 0),
-  copilot_seats: (.data.copilot_billing.seat_breakdown.active // 0),
+  copilot_seats: (.data.copilot_billing.seat_breakdown.active_this_cycle // .data.copilot_billing.seat_breakdown.active // 0),
   errors: (.errors // {})
 }' 2>/dev/null)
 
