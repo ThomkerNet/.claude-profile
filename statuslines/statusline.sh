@@ -224,6 +224,24 @@ if [ -d "$specDir" ]; then
     fi
 fi
 
+# Detect auth mode from settings.json symlink (set by claude-wrapper)
+authMode=""
+settingsLink=$(readlink "$HOME/.claude/settings.json" 2>/dev/null)
+case "$settingsLink" in
+    *subscription*) authMode="SUB" ;;
+    *litellm-claude*) authMode="API" ;;
+    *litellm-general*) authMode="LGEN" ;;
+    *)
+        # Fallback: check default-mode file
+        defaultMode=$(cat "$HOME/.claude/.default-mode" 2>/dev/null)
+        case "$defaultMode" in
+            subscription) authMode="SUB" ;;
+            litellm-claude) authMode="API" ;;
+            litellm-general) authMode="LGEN" ;;
+        esac
+        ;;
+esac
+
 # Read API usage from usage collector cache (tkn-usage MCP server)
 USAGE_CACHE="${CLAUDE_HOME:-$HOME/.claude}/.usage-cache.json"
 usageStr=""
@@ -254,10 +272,17 @@ if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
     fi
 fi
 
+# Build model display with auth mode
+if [ -n "$authMode" ]; then
+    modelDisplay="[$model|$authMode]"
+else
+    modelDisplay="[$model]"
+fi
+
 # Output single-line formatted status
-# Format: [model] host:path [branch] | tokens (ctx%) quota | sys | specs | usage | +lines -lines cost
-output=$(printf "%-8s %s:%s%s%s | %s (%s%%)%s%s%s%s | +%s -%s%s\n" \
-    "[$model]" \
+# Format: [model|MODE] host:path [branch] | tokens (ctx%) quota | sys | specs | usage | +lines -lines cost
+output=$(printf "%-12s %s:%s%s%s | %s (%s%%)%s%s%s%s | +%s -%s%s\n" \
+    "$modelDisplay" \
     "$HOSTNAME_SHORT" \
     "$currentDir" \
     "$gitBranch" \
