@@ -65,6 +65,11 @@
       "description": "Gmail for simonbarker@gmail.com (37 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-usage",
+      "command": "npx -y mcp-remote https://mcp-usage.gate-hexatonic.ts.net/sse",
+      "description": "API usage analytics - Anthropic usage/cost, Claude Code, Copilot billing (5 tools, Tailscale HTTPS)"
+    },
+    {
       "name": "tkn-ollama",
       "command": "npx -y mcp-remote https://mcp-tkn-ollama.gate-hexatonic.ts.net/sse",
       "description": "Ollama model management - list, pull, delete models, health check (8 tools, Tailscale HTTPS)"
