@@ -51,8 +51,8 @@
     },
     {
       "name": "tkn-gmail",
-      "command": "npx -y mcp-remote https://tkn-gmail.gate-hexatonic.ts.net/sse",
-      "description": "Gmail for simonbarker@gmail.com (37 tools, Tailscale HTTPS)"
+      "command": "npx -y mcp-remote https://mcp-gmail.gate-hexatonic.ts.net/sse",
+      "description": "Gmail for simonbarker@gmail.com (16 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-github-actions",
@@ -63,6 +63,11 @@
       "name": "tkn-komodo",
       "command": "npx -y mcp-remote https://mcp-komodo.gate-hexatonic.ts.net/sse",
       "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-unifi",
+      "command": "npx -y mcp-remote https://mcp-tkn-unifi.gate-hexatonic.ts.net/sse",
+      "description": "UniFi network management - 43 tools for devices, clients, firewall, VLANs (Tailscale HTTPS)"
     },
     {
       "name": "tkn-unraid",
