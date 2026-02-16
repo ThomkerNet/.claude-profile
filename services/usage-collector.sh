@@ -5,6 +5,11 @@
 #
 # Output: ~/.claude/.usage-cache.json
 #
+# Data sources (all from tkn-usage REST API):
+#   - Anthropic API: cost + token usage (today)
+#   - Claude subscription: session/weekly quota percentages
+#   - GitHub Copilot: premium request %, plan type (via scraper)
+#
 
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 CACHE_FILE="$CLAUDE_HOME/.usage-cache.json"
@@ -19,47 +24,102 @@ mkdir -p "$CLAUDE_HOME"
 TODAY=$(date -u +%Y-%m-%dT00:00:00Z)
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Fetch summary (no separate health check — this call handles both)
-SUMMARY=$(curl -s --connect-timeout 3 --max-time 5 \
-    "$API_BASE/api/v1/summary?starting_at=$TODAY&ending_at=$NOW" 2>/dev/null)
+# Fetch all endpoints in parallel (backgrounded curl)
+SUMMARY_FILE=$(mktemp)
+QUOTA_FILE=$(mktemp)
+COPILOT_SCRAPE_FILE=$(mktemp)
+trap 'rm -f "$SUMMARY_FILE" "$QUOTA_FILE" "$COPILOT_SCRAPE_FILE"' EXIT
 
-if [ -z "$SUMMARY" ] || ! echo "$SUMMARY" | jq -e '.data' &>/dev/null; then
-    exit 0  # Preserve existing cache
+curl -s --connect-timeout 3 --max-time 5 \
+    "$API_BASE/api/v1/summary?starting_at=$TODAY&ending_at=$NOW" \
+    > "$SUMMARY_FILE" 2>/dev/null &
+
+curl -s --connect-timeout 3 --max-time 8 \
+    "$API_BASE/api/v1/scraper/claude-quota" \
+    > "$QUOTA_FILE" 2>/dev/null &
+
+curl -s --connect-timeout 3 --max-time 8 \
+    "$API_BASE/api/v1/scraper/github-copilot" \
+    > "$COPILOT_SCRAPE_FILE" 2>/dev/null &
+
+wait
+
+# --- Anthropic API usage (cost + tokens) ---
+COST="0"
+INPUT_TOK="0"
+OUTPUT_TOK="0"
+ERRORS="{}"
+
+SUMMARY=$(cat "$SUMMARY_FILE")
+if [ -n "$SUMMARY" ] && echo "$SUMMARY" | jq -e '.data' &>/dev/null; then
+    PARSED=$(echo "$SUMMARY" | jq -c '{
+      cost: ([.data.anthropic_cost.data[]?.cost_usd] | add // 0),
+      input_tokens: ([.data.anthropic_usage.data[]?.input_tokens] | add // 0),
+      output_tokens: ([.data.anthropic_usage.data[]?.output_tokens] | add // 0),
+      errors: (.errors // {})
+    }' 2>/dev/null)
+
+    if [ -n "$PARSED" ]; then
+        COST=$(echo "$PARSED" | jq -r '.cost')
+        INPUT_TOK=$(echo "$PARSED" | jq -r '.input_tokens')
+        OUTPUT_TOK=$(echo "$PARSED" | jq -r '.output_tokens')
+        ERRORS=$(echo "$PARSED" | jq -c '.errors')
+    fi
 fi
 
-# Extract all values in single jq call (reduces coupling to API schema)
-PARSED=$(echo "$SUMMARY" | jq -c '{
-  cost: ([.data.anthropic_cost.data[]?.cost_usd] | add // 0),
-  input_tokens: ([.data.anthropic_usage.data[]?.input_tokens] | add // 0),
-  output_tokens: ([.data.anthropic_usage.data[]?.output_tokens] | add // 0),
-  copilot_seats: (.data.copilot_billing.seat_breakdown.active_this_cycle // .data.copilot_billing.seat_breakdown.active // 0),
-  errors: (.errors // {})
-}' 2>/dev/null)
-
-[ -z "$PARSED" ] && exit 0
-
-COST=$(echo "$PARSED" | jq -r '.cost')
-INPUT_TOK=$(echo "$PARSED" | jq -r '.input_tokens')
-OUTPUT_TOK=$(echo "$PARSED" | jq -r '.output_tokens')
-SEATS=$(echo "$PARSED" | jq -r '.copilot_seats')
-ERRORS=$(echo "$PARSED" | jq -c '.errors')
-
-# Validate numeric (protect against jq returning null/empty)
+# Validate numeric
 [[ "$COST" =~ ^[0-9.]+$ ]] || COST="0"
 [[ "$INPUT_TOK" =~ ^[0-9]+$ ]] || INPUT_TOK="0"
 [[ "$OUTPUT_TOK" =~ ^[0-9]+$ ]] || OUTPUT_TOK="0"
 
+# --- Claude subscription quota (session/weekly %) ---
+CLAUDE_SESSION_PCT="null"
+CLAUDE_WEEKLY_PCT="null"
+CLAUDE_SONNET_PCT="null"
+CLAUDE_SESSION_RESET_AT="null"
+CLAUDE_WEEKLY_RESET_AT="null"
+
+QUOTA=$(cat "$QUOTA_FILE")
+if [ -n "$QUOTA" ] && echo "$QUOTA" | jq -e '.status == "success"' &>/dev/null; then
+    CLAUDE_SESSION_PCT=$(echo "$QUOTA" | jq '.current_session.percent_used // null')
+    CLAUDE_WEEKLY_PCT=$(echo "$QUOTA" | jq '.weekly_all_models.percent_used // null')
+    CLAUDE_SONNET_PCT=$(echo "$QUOTA" | jq '.weekly_sonnet_only.percent_used // null')
+    # Store raw ISO timestamps for compact formatting by statusline
+    CLAUDE_SESSION_RESET_AT=$(echo "$QUOTA" | jq '.raw_api_data.five_hour.resets_at // null')
+    CLAUDE_WEEKLY_RESET_AT=$(echo "$QUOTA" | jq '.raw_api_data.seven_day.resets_at // null')
+fi
+
+# --- GitHub Copilot (premium requests % from scraper) ---
+COPILOT_PREMIUM_PCT="null"
+COPILOT_PLAN="null"
+
+COPILOT_SCRAPE=$(cat "$COPILOT_SCRAPE_FILE")
+if [ -n "$COPILOT_SCRAPE" ] && echo "$COPILOT_SCRAPE" | jq -e '.status == "success"' &>/dev/null; then
+    COPILOT_PREMIUM_PCT=$(echo "$COPILOT_SCRAPE" | jq '.premium_requests_percentage // null')
+    COPILOT_PLAN=$(echo "$COPILOT_SCRAPE" | jq -r '.plan // null')
+fi
+
 # Atomic write (tmp + mv prevents partial reads by statusline)
 cat > "${CACHE_FILE}.tmp" << EOF
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "status": "ok",
   "timestamp": $(date +%s),
   "date": "$(date -u +%Y-%m-%d)",
   "cost_usd": $COST,
   "input_tokens": $INPUT_TOK,
   "output_tokens": $OUTPUT_TOK,
-  "copilot_seats": $SEATS,
+  "claude_sub": {
+    "session_pct": $CLAUDE_SESSION_PCT,
+    "weekly_pct": $CLAUDE_WEEKLY_PCT,
+    "sonnet_pct": $CLAUDE_SONNET_PCT,
+    "session_reset_at": $CLAUDE_SESSION_RESET_AT,
+    "weekly_reset_at": $CLAUDE_WEEKLY_RESET_AT
+  },
+  "copilot": {
+    "premium_pct": $COPILOT_PREMIUM_PCT,
+    "plan": "$COPILOT_PLAN"
+  },
   "errors": $ERRORS
 }
 EOF
