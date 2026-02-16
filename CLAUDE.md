@@ -222,6 +222,72 @@ All server URLs are defined in `~/.claude-profile/mcp-servers.json`. Use `/zupda
 
 ---
 
+## AI Peer Review (MCP Server: `tkn-aipeerreview`)
+
+Multi-model code review and consultation via external AI models. Use this to get second opinions from non-Claude models (GPT-5.2, Gemini 3 Pro, Codex, etc.).
+
+**When to use:**
+- User asks to "peer review", "get a second opinion", or "review this code"
+- Before merging significant changes (architecture, security-sensitive code)
+- Debugging hard problems — consult external models for fresh perspective
+
+### Quick Reference
+
+| Tool | Use When | Speed |
+|------|----------|-------|
+| `quick_review` | Fast feedback on a code snippet | ~10s |
+| `peer_review` | Thorough multi-model review | ~30-60s |
+| `quick_consult` | Quick question to an external model | ~10s |
+| `peer_consult` | Deep consultation on a problem | ~30-60s |
+
+### Review Types
+
+Use `detect_review_type` to auto-detect, or specify directly:
+
+| Type | Best For |
+|------|----------|
+| `security` | Auth, input validation, secrets, OWASP |
+| `architecture` | Design patterns, coupling, scalability |
+| `bug` | Logic errors, edge cases, race conditions |
+| `performance` | Bottlenecks, memory, algorithmic complexity |
+| `api` | REST/GraphQL design, contracts, versioning |
+| `test` | Coverage, assertions, test quality |
+| `general` | Broad review (default) |
+
+### Consultation Types
+
+Use `detect_consultation_type` to auto-detect, or specify directly:
+
+`debugging`, `architecture`, `implementation`, `explanation`, `code-understanding`, `security`, `optimization`, `general`
+
+### Model Selection
+
+Use `get_models_for_review_type` or `get_models_for_consultation_type` to see available models. Key models:
+- **`gpt-5.2`** / **`gpt-5.2-codex`** — Strong for practical code fixes
+- **`gemini-3-pro-preview`** — Good architectural perspective
+- **`claude-opus-4-5`** — When you want a Claude second opinion
+
+Omit `model` parameter to use the server's default selection.
+
+### Fallback Behavior
+
+The server has **API fallback** — if primary model provider is unavailable, it automatically routes to an available alternative. No client-side handling needed.
+
+### Examples
+
+```
+# Quick review of a function
+quick_review(code: "...", language: "python")
+
+# Thorough security review with specific model
+peer_review(code: "...", language: "typescript", review_type: "security", model: "gpt-5.2")
+
+# Consult on a debugging problem
+peer_consult(question: "Why might this race condition occur?", context: "...", consultation_type: "debugging")
+```
+
+---
+
 ## Notes
 
 - **Scratchpad for temp files:** Use session-specific scratchpad directory (not `/tmp`)
