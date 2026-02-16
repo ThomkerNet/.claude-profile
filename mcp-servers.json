@@ -65,6 +65,11 @@
       "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-plane",
+      "command": "npx -y mcp-remote https://mcp-plane.gate-hexatonic.ts.net/sse",
+      "description": "Plane project management - issues, cycles, modules, workflows (27 tools, Tailscale HTTPS)"
+    },
+    {
       "name": "tkn-unifi",
       "command": "npx -y mcp-remote https://mcp-tkn-unifi.gate-hexatonic.ts.net/sse",
       "description": "UniFi network management - 43 tools for devices, clients, firewall, VLANs (Tailscale HTTPS)"
