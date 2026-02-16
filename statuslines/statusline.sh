@@ -217,6 +217,7 @@ usage_cost="0"; usage_tokens="0"
 sub_session=""; sub_weekly=""; sub_session_reset_at=""; sub_weekly_reset_at=""
 cp_premium_pct=""
 usage_cache_valid=false
+usage_cache_stale=false
 
 if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
     read -r cache_time usage_cost usage_tokens \
@@ -235,7 +236,13 @@ if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
     )
     [[ "$cache_time" =~ ^[0-9]+$ ]] || cache_time=0
     cache_age=$(( $(date +%s) - cache_time ))
-    [ "$cache_age" -lt 300 ] && usage_cache_valid=true
+    if [ "$cache_age" -lt 300 ]; then
+        usage_cache_valid=true
+    elif [ "$cache_age" -lt 3600 ]; then
+        # Stale but usable (API offline) — show data with staleness marker
+        usage_cache_valid=true
+        usage_cache_stale=true
+    fi
 fi
 
 # ── Resolve Claude subscription quota (usage-cache > quota-cache > creds) ────
@@ -328,15 +335,27 @@ elif [ "$MEM_PCT" != "--" ]; then
     sysStr="M:${MEM_PCT}%"
 fi
 
+# ── Terminal width detection ──────────────────────────────────────────────────
+
+TERM_WIDTH=${COLUMNS:-$(tput cols 2>/dev/null)}
+TERM_WIDTH=${TERM_WIDTH:-120}
+
 # ── Output ───────────────────────────────────────────────────────────────────
 # Line 1: [Model|MODE] host:path [branch] | ctx bar | sys | +N -N $cost
 # Line 2: Claude S: bar r-Xh  W: bar r-Xd  |  Copilot: bar r-Xd  |  API: $X/Ytok
+#
+# Responsive: narrow terminals (<100) drop sys stats and simplify bars
 
 # --- Line 1 ---
 line1_parts=()
 line1_parts+=("$modelDisplay $HOSTNAME_SHORT:$currentDir$gitBranch$customLabel")
-line1_parts+=("ctx $ctxBar $(format_tokens $totalTokens)")
-[ -n "$sysStr" ] && line1_parts+=("$sysStr")
+if [ "$TERM_WIDTH" -ge 100 ]; then
+    line1_parts+=("ctx $ctxBar $(format_tokens $totalTokens)")
+else
+    # Compact: just percentage and tokens, no bar
+    line1_parts+=("ctx ${contextPct}% $(format_tokens $totalTokens)")
+fi
+[ -n "$sysStr" ] && [ "$TERM_WIDTH" -ge 120 ] && line1_parts+=("$sysStr")
 [ -n "$specStr" ] && line1_parts+=("$specStr")
 
 change_parts=""
@@ -355,10 +374,18 @@ line2_parts=()
 
 # Claude subscription
 if [ -n "$sub_session_bar" ]; then
-    claude_str="Claude S:$sub_session_bar"
-    [ -n "$sub_session_reset" ] && claude_str+=" $sub_session_reset"
-    claude_str+="  W:$sub_weekly_bar"
-    [ -n "$sub_weekly_reset" ] && claude_str+=" $sub_weekly_reset"
+    if [ "$TERM_WIDTH" -ge 100 ]; then
+        claude_str="Claude S:$sub_session_bar"
+        [ -n "$sub_session_reset" ] && claude_str+=" $sub_session_reset"
+        claude_str+="  W:$sub_weekly_bar"
+        [ -n "$sub_weekly_reset" ] && claude_str+=" $sub_weekly_reset"
+    else
+        # Narrow: no bars, just percentages
+        claude_str="Claude S:${sub_session}%"
+        [ -n "$sub_session_reset" ] && claude_str+=" $sub_session_reset"
+        claude_str+=" W:${sub_weekly}%"
+        [ -n "$sub_weekly_reset" ] && claude_str+=" $sub_weekly_reset"
+    fi
     line2_parts+=("$claude_str")
 elif [ -n "$quotaLabel" ]; then
     line2_parts+=("Claude $quotaLabel")
@@ -366,7 +393,11 @@ fi
 
 # Copilot
 if [ -n "$cp_bar" ]; then
-    cp_str="Copilot $cp_bar"
+    if [ "$TERM_WIDTH" -ge 100 ]; then
+        cp_str="Copilot $cp_bar"
+    else
+        cp_str="CP:${cp_int}%"
+    fi
     [ -n "$cp_reset" ] && cp_str+=" $cp_reset"
     line2_parts+=("$cp_str")
 fi
@@ -374,11 +405,16 @@ fi
 # API usage
 [ -n "$apiStr" ] && line2_parts+=("$apiStr")
 
+# Add staleness marker if cache is old (API/tailnet offline)
+stale_prefix=""
+$usage_cache_stale && stale_prefix="~"
+
 line2=""
 for ((i=0; i<${#line2_parts[@]}; i++)); do
     [ $i -gt 0 ] && line2+=" | "
     line2+="${line2_parts[$i]}"
 done
+[ -n "$stale_prefix" ] && [ -n "$line2" ] && line2="${stale_prefix}${line2}"
 
 echo "$line1"
 [ -n "$line2" ] && echo "$line2"
