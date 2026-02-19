@@ -87,11 +87,12 @@ If not in README:
 
 ## Output Format
 
-Each server entry uses `npx -y mcp-remote` with Tailscale HTTPS:
+Each server entry uses streamable-http transport with Tailscale HTTPS:
 ```json
 {
   "name": "tkn-cloudflare",
-  "command": "npx -y mcp-remote https://mcp-<hostname>.gate-hexatonic.ts.net/sse",
+  "url": "https://mcp-<hostname>.gate-hexatonic.ts.net/mcp",
+  "transport": "streamable-http",
   "description": "DNS and zone management (Tailscale HTTPS)"
 }
 ```
@@ -100,13 +101,13 @@ Each server entry uses `npx -y mcp-remote` with Tailscale HTTPS:
 
 1. Strip `tkn-` or `bnx-` prefix from compose service name
 2. Prepend `mcp-`
-3. Form: `https://mcp-{stripped-name}.gate-hexatonic.ts.net/sse`
+3. Form: `https://mcp-{stripped-name}.gate-hexatonic.ts.net/mcp`
 
-Example: `tkn-media` → `https://mcp-media.gate-hexatonic.ts.net/sse`
+Example: `tkn-media` → `https://mcp-media.gate-hexatonic.ts.net/mcp`
 
 Mark the proposed URL as **UNVERIFIED** in the report. After writing mcp-servers.json, verify with:
 ```bash
-curl -sf -o /dev/null -w "%{http_code}" https://mcp-{name}.gate-hexatonic.ts.net/sse
+curl -sf -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" https://mcp-{name}.gate-hexatonic.ts.net/mcp -d '{}'
 ```
 If the health check fails (non-200), flag it for operator to configure Tailscale serve for port XXXX.
 
@@ -118,7 +119,7 @@ If the health check fails (non-200), flag it for operator to configure Tailscale
 4. **Skip commented lines** - Lines starting with `#` in compose.yaml
 5. **Remove orphans** - TKN/BNX servers in JSON but not in compose.yaml
 6. **Preserve order** - Keep non-TKN servers at the top, TKN servers alphabetically
-7. **Use command field** - Format: `"command": "npx -y mcp-remote <URL>"` (not transport/url fields)
+7. **Use transport/url fields** - Format: `"url": "<URL>", "transport": "streamable-http"` (not command field with mcp-remote)
 
 ## Example Execution
 
@@ -141,7 +142,7 @@ ports:
 {
   "servers": [
     {"name": "memory", "command": "..."},
-    {"name": "tkn-cloudflare", "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse", "description": "DNS and zone management"}
+    {"name": "tkn-cloudflare", "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "DNS and zone management"}
   ]
 }
 ```
@@ -151,8 +152,8 @@ ports:
 {
   "servers": [
     {"name": "memory", "command": "..."},
-    {"name": "tkn-cloudflare", "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse", "description": "DNS and zone management"},
-    {"name": "tkn-media", "command": "npx -y mcp-remote https://mcp-media.gate-hexatonic.ts.net/sse", "description": "Plex, Jellyfin (Tailscale HTTPS)"}
+    {"name": "tkn-cloudflare", "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "DNS and zone management"},
+    {"name": "tkn-media", "url": "https://mcp-media.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "Plex, Jellyfin (Tailscale HTTPS)"}
   ]
 }
 ```

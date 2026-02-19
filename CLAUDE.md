@@ -213,9 +213,9 @@ See [QUICK_REF.md](reference/QUICK_REF.md) for more shortcuts and paths.
 
 ## MCP Server Connectivity
 
-TKN MCP servers connect via **Tailscale HTTPS** using `mcp-remote`:
+TKN MCP servers connect via **Tailscale HTTPS** using streamable-http transport:
 ```
-npx -y mcp-remote https://mcp-<name>.gate-hexatonic.ts.net/sse
+claude mcp add <name> --transport http https://mcp-<name>.gate-hexatonic.ts.net/mcp
 ```
 
 All server URLs are defined in `~/.claude-profile/mcp-servers.json`. Use `/zupdatetknmcpservers` to sync with deployed servers.

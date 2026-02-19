@@ -31,57 +31,68 @@
     },
     {
       "name": "tkn-aipeerreview",
-      "command": "npx -y mcp-remote https://mcp-aipeer.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-aipeer.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "AI Peer Review - multi-model code review via LiteLLM (Tailscale HTTPS)"
     },
     {
       "name": "tkn-authentik",
-      "command": "npx -y mcp-remote https://mcp-authentik.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-authentik.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "Authentik identity provider management (Tailscale HTTPS)"
     },
     {
       "name": "tkn-cloudflare",
-      "command": "npx -y mcp-remote https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "Cloudflare DNS, Zero Trust, Tunnels, DLP (116 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-firecrawl",
-      "command": "npx -y mcp-remote https://mcp-firecrawl.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-firecrawl.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "Firecrawl web scraping, crawling, and search (Tailscale HTTPS)"
     },
     {
       "name": "tkn-gmail",
-      "command": "npx -y mcp-remote https://mcp-gmail.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-gmail.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "Gmail for simonbarker@gmail.com (16 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-github-actions",
-      "command": "npx -y mcp-remote https://mcp-github-actions.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-github-actions.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "GitHub Actions CI/CD - workflow runs, logs, triggers (8 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-komodo",
-      "command": "npx -y mcp-remote https://mcp-komodo.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-komodo.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-plane",
-      "command": "npx -y mcp-remote https://mcp-plane.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-plane.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "Plane project management - issues, cycles, modules, workflows (27 tools, Tailscale HTTPS)"
     },
     {
       "name": "tkn-unifi",
-      "command": "npx -y mcp-remote https://mcp-tkn-unifi.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-tkn-unifi.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "UniFi network management - 43 tools for devices, clients, firewall, VLANs (Tailscale HTTPS)"
     },
     {
       "name": "tkn-unraid",
-      "command": "npx -y mcp-remote https://mcp-unraid.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-unraid.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "Unraid server management (Tailscale HTTPS)"
     },
     {
       "name": "tkn-usage",
-      "command": "npx -y mcp-remote https://mcp-usage.gate-hexatonic.ts.net/sse",
+      "url": "https://mcp-usage.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
       "description": "API usage analytics - Anthropic usage/cost, Claude Code, Copilot billing (5 tools, Tailscale HTTPS)"
     }
   ]

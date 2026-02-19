@@ -105,12 +105,16 @@ mcp_server_config_matches() {
     installed=$(jq --arg n "$name" '.mcpServers[$n]' "$CLAUDE_CONFIG" 2>/dev/null)
     [ "$installed" = "null" ] && return 1
 
-    if [ "$transport" = "sse" ]; then
-        # SSE: compare URL
-        local desired_url installed_url
+    if [ "$transport" = "sse" ] || [ "$transport" = "streamable-http" ]; then
+        # SSE or streamable-http: compare URL and transport type
+        local desired_url installed_url installed_type
         desired_url=$(echo "$desired_row" | jq -r '.url')
         installed_url=$(echo "$installed" | jq -r '.url // ""')
-        [ "$desired_url" = "$installed_url" ] && return 0 || return 1
+        installed_type=$(echo "$installed" | jq -r '.type // ""')
+        # streamable-http maps to "http" type in claude.json
+        local expected_type
+        [ "$transport" = "streamable-http" ] && expected_type="http" || expected_type="sse"
+        [ "$desired_url" = "$installed_url" ] && [ "$expected_type" = "$installed_type" ] && return 0 || return 1
     else
         # stdio: compare command + args and env vars
         # Reconstruct desired command string (what claude mcp add receives)
@@ -233,8 +237,8 @@ mcpdsc_diff() {
         if ! mcp_server_exists "$server"; then
             transport=$(echo "$row" | jq -r '.transport // "stdio"')
             url=$(echo "$row" | jq -r '.url // ""')
-            if [ "$transport" = "sse" ]; then
-                echo "  + $server (sse: $url)"
+            if [ "$transport" = "sse" ] || [ "$transport" = "streamable-http" ]; then
+                echo "  + $server ($transport: $url)"
             else
                 echo "  + $server (stdio)"
             fi
@@ -642,18 +646,21 @@ if command -v claude &>/dev/null && [ -f "$REPO_DIR/mcp-servers.json" ] && comma
             is_update=true
         fi
 
-        if [ "$transport" = "sse" ]; then
-            # SSE transport: connect to remote URL
+        if [ "$transport" = "sse" ] || [ "$transport" = "streamable-http" ]; then
+            # SSE or streamable-http transport: connect to remote URL
             url=$(echo "$row" | jq -r '.url')
+            # Map transport name: streamable-http -> http (Claude Code CLI naming)
+            cli_transport=""
+            [ "$transport" = "streamable-http" ] && cli_transport="http" || cli_transport="sse"
 
-            # Add SSE server - claude mcp add will validate endpoint connectivity
-            mcp_output=$(claude mcp add "$name" --transport sse --scope "$scope" "$url" 2>&1)
+            # Add server - claude mcp add will validate endpoint connectivity
+            mcp_output=$(claude mcp add "$name" --transport "$cli_transport" --scope "$scope" "$url" 2>&1)
             mcp_exit=$?
             if [ $mcp_exit -eq 0 ]; then
                 if [ "$is_update" = true ]; then
-                    dsc_changed "mcp:$name (updated, sse, scope=$scope)"
+                    dsc_changed "mcp:$name (updated, $cli_transport, scope=$scope)"
                 else
-                    dsc_changed "mcp:$name (added, sse, scope=$scope)"
+                    dsc_changed "mcp:$name (added, $cli_transport, scope=$scope)"
                 fi
             else
                 # Server add failed - endpoint may be unreachable or other error
