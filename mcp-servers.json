@@ -54,10 +54,16 @@
       "description": "Firecrawl web scraping, crawling, and search (Tailscale HTTPS)"
     },
     {
-      "name": "tkn-gmail",
-      "url": "https://mcp-gmail.gate-hexatonic.ts.net/mcp",
+      "name": "tkn-google-workspace",
+      "url": "https://mcp-google-workspace.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Gmail for simonbarker@gmail.com (16 tools, Tailscale HTTPS)"
+      "description": "Google Workspace for simonbarker@gmail.com (Gmail, Calendar, Drive, Docs, Sheets, Tasks — 86 tools, HITL, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-google-workspace-bnx",
+      "url": "https://mcp-google-workspace-bnx.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Google Workspace for simon@boroughnexus.com (Gmail, Calendar, Drive, Docs, Sheets, Tasks — 86 tools, HITL, Tailscale HTTPS)"
     },
     {
       "name": "tkn-github-actions",
@@ -76,6 +82,12 @@
       "url": "https://mcp-plane.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Plane project management - issues, cycles, modules, workflows (27 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-ssh",
+      "url": "https://mcp-ssh.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Audited SSH execution - commands, file transfer, history, pattern analysis, tool promotion (Tailscale HTTPS)"
     },
     {
       "name": "tkn-unifi",
