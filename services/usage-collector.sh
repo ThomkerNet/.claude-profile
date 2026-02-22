@@ -85,8 +85,8 @@ if [ -n "$QUOTA" ] && echo "$QUOTA" | jq -e '.status == "success"' &>/dev/null; 
     CLAUDE_WEEKLY_PCT=$(echo "$QUOTA" | jq '.weekly_all_models.percent_used // null')
     CLAUDE_SONNET_PCT=$(echo "$QUOTA" | jq '.weekly_sonnet_only.percent_used // null')
     # Store raw ISO timestamps for compact formatting by statusline
-    CLAUDE_SESSION_RESET_AT=$(echo "$QUOTA" | jq '.raw_api_data.five_hour.resets_at // null')
-    CLAUDE_WEEKLY_RESET_AT=$(echo "$QUOTA" | jq '.raw_api_data.seven_day.resets_at // null')
+    CLAUDE_SESSION_RESET_AT=$(echo "$QUOTA" | jq '.current_session.resets_at // null')
+    CLAUDE_WEEKLY_RESET_AT=$(echo "$QUOTA" | jq '.weekly_all_models.resets_at // null')
 fi
 
 # --- GitHub Copilot (premium requests % from scraper) ---

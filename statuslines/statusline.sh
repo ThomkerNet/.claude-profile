@@ -10,9 +10,11 @@
 mini_bar() {
     local pct=${1:-0}
     local width=8
-    # Clamp 0–100
-    [ "$pct" -gt 100 ] 2>/dev/null && pct=100
-    [ "$pct" -lt 0 ] 2>/dev/null && pct=0
+    # Truncate to integer (handles floats from cache), then clamp 0–100
+    pct=${pct%.*}
+    [[ "$pct" =~ ^-?[0-9]+$ ]] || pct=0
+    (( pct > 100 )) && pct=100
+    (( pct < 0 )) && pct=0
     local filled=$(( pct * width / 100 ))
     local empty=$(( width - filled ))
     local bar=""
@@ -33,7 +35,12 @@ iso_to_epoch() {
     local bsd_ts="${clean_ts/Z/+0000}"
     date -j -f "%Y-%m-%dT%H:%M:%S%z" "$bsd_ts" +%s 2>/dev/null && return
     # Python fallback
-    python3 -c "from datetime import datetime,timezone; print(int(datetime.fromisoformat('${ts}'.replace('Z','+00:00')).timestamp()))" 2>/dev/null
+    python3 - "$ts" 2>/dev/null <<'PY'
+import sys
+from datetime import datetime
+ts = sys.argv[1].replace('Z', '+00:00')
+print(int(datetime.fromisoformat(ts).timestamp()))
+PY
 }
 
 # Compact time-until-reset from ISO timestamp → "r-2h17m" or "r-6d7h"
@@ -45,20 +52,20 @@ compact_reset() {
     reset_epoch=$(iso_to_epoch "$ts")
     [ -z "$reset_epoch" ] && return
 
-    local now_epoch=$(date +%s)
+    local now_epoch=$NOW_EPOCH
     local delta=$(( reset_epoch - now_epoch ))
-    [ "$delta" -le 0 ] && { echo "r-now"; return; }
+    [ "$delta" -le 0 ] && { echo "rnow"; return; }
 
     local days=$(( delta / 86400 ))
     local hours=$(( (delta % 86400) / 3600 ))
     local mins=$(( (delta % 3600) / 60 ))
 
     if [ "$days" -gt 0 ]; then
-        printf "r-%dd%dh" "$days" "$hours"
+        printf "r%dd" "$days"
     elif [ "$hours" -gt 0 ]; then
-        printf "r-%dh%dm" "$hours" "$mins"
+        printf "r%dh" "$hours"
     else
-        printf "r-%dm" "$mins"
+        printf "r%dm" "$mins"
     fi
 }
 
@@ -84,9 +91,33 @@ format_tokens() {
     fi
 }
 
+# ── Colors ───────────────────────────────────────────────────────────────────
+
+DIM=$'\e[2m'
+CYAN=$'\e[36m'
+YELLOW=$'\e[33m'
+GREEN=$'\e[32m'
+RED=$'\e[31m'
+RST=$'\e[0m'
+
+# Bar colored by percentage: green <70, yellow 70–89, red ≥90
+colored_bar() {
+    local pct=${1:-0}
+    pct=${pct%.*}
+    [[ "$pct" =~ ^-?[0-9]+$ ]] || pct=0
+    local col
+    if (( pct >= 90 )); then col="$RED"
+    elif (( pct >= 70 )); then col="$YELLOW"
+    else col="$GREEN"
+    fi
+    printf '%s%s%s' "$col" "$(mini_bar "$pct")" "$RST"
+}
+
 # ── Platform detection ───────────────────────────────────────────────────────
 
-HOSTNAME_SHORT=$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo "unknown")
+NOW_EPOCH=$(date +%s)
+HOSTNAME_SHORT="${HOSTNAME%%.*}"
+[[ -z "$HOSTNAME_SHORT" ]] && HOSTNAME_SHORT=$(hostname 2>/dev/null || echo "unknown")
 OS_TYPE="$(uname -s)"
 
 # ── System stats (CPU/MEM from glances cache or instant) ────────────────────
@@ -99,7 +130,7 @@ get_system_stats() {
     if [ -f "$GLANCES_CACHE" ]; then
         local cache_time cache_age
         cache_time=$(jq -r '.timestamp // 0' "$GLANCES_CACHE" 2>/dev/null)
-        cache_age=$(( $(date +%s) - cache_time ))
+        cache_age=$(( NOW_EPOCH - cache_time ))
         if [ "$cache_age" -lt 120 ]; then
             cpu_pct=$(jq -r '.cpu.avg_15m // .cpu.current // 0' "$GLANCES_CACHE" 2>/dev/null)
             mem_pct=$(jq -r '.mem.avg_15m // .mem.current // 0' "$GLANCES_CACHE" 2>/dev/null)
@@ -143,8 +174,8 @@ get_system_stats() {
 }
 
 SYSTEM_STATS=$(get_system_stats)
-CPU_PCT=$(echo "$SYSTEM_STATS" | cut -d: -f1)
-MEM_PCT=$(echo "$SYSTEM_STATS" | cut -d: -f2)
+CPU_PCT=${SYSTEM_STATS%%:*}
+MEM_PCT=${SYSTEM_STATS#*:}
 
 # ── Read Claude Code JSON from stdin (single jq call) ────────────────────────
 
@@ -163,14 +194,14 @@ IFS=$'\t' read -r model fullPath inputTokens outputTokens contextSize costUsd li
     ] | @tsv' 2>/dev/null
 )
 
-currentDir=$(echo "$fullPath" | awk -F'/' '{n=NF; if(n>=3) print $(n-2)"/"$(n-1)"/"$n; else if(n==2) print $(n-1)"/"$n; else print $n}')
+currentDir=$(echo "$fullPath" | awk -F'/' '{n=NF; if(n>=2) print $(n-1)"/"$n; else print $n}')
 
 # Custom session label
 customLabel=""
 labelFile="${HOME}/.claude/.session-label"
 if [ -f "$labelFile" ]; then
-    customLabel=$(cat "$labelFile" | tr -d '\n' | tr -d ' ')
-    [ -n "$customLabel" ] && customLabel=" • $customLabel"
+    customLabel=$(tr -d '\n ' < "$labelFile")
+    [ -n "$customLabel" ] && customLabel="${YELLOW}${customLabel}${RST} • "
 fi
 
 # Context window (validate numeric)
@@ -184,23 +215,8 @@ contextPct=0
 # Git branch
 gitBranch=""
 currentBranch=$(git branch --show-current 2>/dev/null)
-[ -n "$currentBranch" ] && gitBranch=" [$currentBranch]"
+[ -n "$currentBranch" ] && gitBranch=" ${CYAN}[${currentBranch}]${RST}"
 
-# Auth mode from settings symlink
-authMode=""
-settingsLink=$(readlink "$HOME/.claude/settings.json" 2>/dev/null)
-case "$settingsLink" in
-    *subscription*) authMode="SUB" ;;
-    *litellm-claude*) authMode="API" ;;
-    *litellm-general*) authMode="LGEN" ;;
-    *)
-        defaultMode=$(cat "$HOME/.claude/.default-mode" 2>/dev/null)
-        case "$defaultMode" in
-            subscription) authMode="SUB" ;;
-            litellm-claude) authMode="API" ;;
-            litellm-general) authMode="LGEN" ;;
-        esac ;;
-esac
 
 # Spec count
 specStr=""
@@ -220,10 +236,10 @@ usage_cache_valid=false
 usage_cache_stale=false
 
 if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
-    read -r cache_time usage_cost usage_tokens \
-         sub_session sub_weekly sub_session_reset_at sub_weekly_reset_at \
-         cp_premium_pct < <(
-        jq -r '[
+    # Use mapfile (array) instead of read+@tsv to preserve empty fields.
+    # bash read collapses consecutive tabs (whitespace IFS) which drops null fields.
+    mapfile -t _u < <(
+        jq -r '
             (.timestamp // 0),
             (.cost_usd // 0),
             ((.input_tokens // 0) + (.output_tokens // 0)),
@@ -232,8 +248,16 @@ if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
             (.claude_sub.session_reset_at // ""),
             (.claude_sub.weekly_reset_at // ""),
             (.copilot.premium_pct // "")
-        ] | @tsv' "$USAGE_CACHE" 2>/dev/null
+        ' "$USAGE_CACHE" 2>/dev/null
     )
+    cache_time="${_u[0]:-0}"
+    usage_cost="${_u[1]:-0}"
+    usage_tokens="${_u[2]:-0}"
+    sub_session="${_u[3]}"
+    sub_weekly="${_u[4]}"
+    sub_session_reset_at="${_u[5]}"
+    sub_weekly_reset_at="${_u[6]}"
+    cp_premium_pct="${_u[7]}"
     [[ "$cache_time" =~ ^[0-9]+$ ]] || cache_time=0
     cache_age=$(( $(date +%s) - cache_time ))
     if [ "$cache_age" -lt 300 ]; then
@@ -254,8 +278,8 @@ sub_weekly_reset=""
 quotaLabel=""
 
 if $usage_cache_valid && [ -n "$sub_session" ] && [ "$sub_session" != "null" ]; then
-    sub_session_bar=$(mini_bar "$sub_session")
-    sub_weekly_bar=$(mini_bar "$sub_weekly")
+    sub_session_bar=$(colored_bar "$sub_session")
+    sub_weekly_bar=$(colored_bar "$sub_weekly")
     sub_session_reset=$(compact_reset "$sub_session_reset_at")
     sub_weekly_reset=$(compact_reset "$sub_weekly_reset_at")
 else
@@ -266,10 +290,10 @@ else
         if [ "$quotaStatus" = "ok" ]; then
             sessionPct=$(jq -r '.session.percent // 0' "$quotaFile" 2>/dev/null)
             weeklyPct=$(jq -r '.weekly.percent // 0' "$quotaFile" 2>/dev/null)
-            [ "$sessionPct" != "0" ] || [ "$weeklyPct" != "0" ] && {
+            if [ "$sessionPct" != "0" ] || [ "$weeklyPct" != "0" ]; then
                 sub_session_bar=$(mini_bar "$sessionPct")
                 sub_weekly_bar=$(mini_bar "$weeklyPct")
-            }
+            fi
         fi
     fi
     # Fallback: just show plan type
@@ -289,7 +313,7 @@ cp_reset=""
 if $usage_cache_valid && [ -n "$cp_premium_pct" ] && [ "$cp_premium_pct" != "null" ] && [ "$cp_premium_pct" != "" ]; then
     # Round to int for bar chart
     cp_int=$(awk -v p="$cp_premium_pct" 'BEGIN {printf "%d", p + 0.5}')
-    cp_bar=$(mini_bar "$cp_int")
+    cp_bar=$(colored_bar "$cp_int")
     # Copilot resets at start of next month
     next_month=$(next_month_iso)
     [ -n "$next_month" ] && cp_reset=$(compact_reset "$next_month")
@@ -307,61 +331,42 @@ fi
 
 # ── Build model display ─────────────────────────────────────────────────────
 
-if [ -n "$authMode" ]; then
-    modelDisplay="[$model|$authMode]"
-else
-    modelDisplay="[$model]"
-fi
+modelDisplay="${DIM}[${RST}${model}${DIM}]${RST}"
 
 # ── Session cost string ──────────────────────────────────────────────────────
 
 costStr=""
 if awk -v c="$costUsd" 'BEGIN {exit !(c > 0)}' 2>/dev/null; then
-    costStr="\$$(LC_NUMERIC=C printf '%.4f' "$costUsd")"
+    costStr="${YELLOW}\$$(LC_NUMERIC=C printf '%.4f' "$costUsd")${RST}"
 fi
 
 # ── Format context bar ───────────────────────────────────────────────────────
 
-ctxBar=$(mini_bar "$contextPct")
+ctxBar=$(colored_bar "$contextPct")
 
-# ── System stats ─────────────────────────────────────────────────────────────
+# ── System stats (only shown when above threshold, in red) ───────────────────
 
+CPU_THRESHOLD=80
+MEM_THRESHOLD=85
 sysStr=""
-if [ "$CPU_PCT" != "--" ] && [ "$MEM_PCT" != "--" ]; then
-    sysStr="C:${CPU_PCT}% M:${MEM_PCT}%"
-elif [ "$CPU_PCT" != "--" ]; then
-    sysStr="C:${CPU_PCT}%"
-elif [ "$MEM_PCT" != "--" ]; then
-    sysStr="M:${MEM_PCT}%"
+cpu_hi=false; mem_hi=false
+[[ "$CPU_PCT" =~ ^[0-9]+$ ]] && (( CPU_PCT >= CPU_THRESHOLD )) && cpu_hi=true
+[[ "$MEM_PCT" =~ ^[0-9]+$ ]] && (( MEM_PCT >= MEM_THRESHOLD )) && mem_hi=true
+if $cpu_hi || $mem_hi; then
+    sysStr="${RED}C:${CPU_PCT}% M:${MEM_PCT}%${RST}"
 fi
 
-# ── Terminal width detection ──────────────────────────────────────────────────
-
-TERM_WIDTH=${COLUMNS:-$(tput cols 2>/dev/null)}
-TERM_WIDTH=${TERM_WIDTH:-120}
-
 # ── Output ───────────────────────────────────────────────────────────────────
-# Line 1: [Model|MODE] host:path [branch] | ctx bar | sys | +N -N $cost
+# Line 1: [Model] host:path [branch] | ctx bar | sys | +N -N $cost
 # Line 2: Claude S: bar r-Xh  W: bar r-Xd  |  Copilot: bar r-Xd  |  API: $X/Ytok
-#
-# Responsive: narrow terminals (<100) drop sys stats and simplify bars
 
 # --- Line 1 ---
 line1_parts=()
-line1_parts+=("$modelDisplay $HOSTNAME_SHORT:$currentDir$gitBranch$customLabel")
-if [ "$TERM_WIDTH" -ge 100 ]; then
-    line1_parts+=("ctx $ctxBar $(format_tokens $totalTokens)")
-else
-    # Compact: just percentage and tokens, no bar
-    line1_parts+=("ctx ${contextPct}% $(format_tokens $totalTokens)")
-fi
-[ -n "$sysStr" ] && [ "$TERM_WIDTH" -ge 120 ] && line1_parts+=("$sysStr")
+line1_parts+=("${customLabel}${modelDisplay} ${DIM}${HOSTNAME_SHORT}:${RST}${currentDir}${gitBranch}")
+line1_parts+=("${DIM}ctx${RST} ${ctxBar} ${DIM}$(format_tokens "$totalTokens")${RST}")
+[ -n "$sysStr" ] && line1_parts+=("$sysStr")
 [ -n "$specStr" ] && line1_parts+=("$specStr")
-
-change_parts=""
-[ "$linesAdded" != "0" ] || [ "$linesRemoved" != "0" ] && change_parts="+${linesAdded} -${linesRemoved}"
-[ -n "$costStr" ] && change_parts="${change_parts:+$change_parts }$costStr"
-[ -n "$change_parts" ] && line1_parts+=("$change_parts")
+[ -n "$costStr" ] && line1_parts+=("$costStr")
 
 line1=""
 for ((i=0; i<${#line1_parts[@]}; i++)); do
@@ -374,31 +379,19 @@ line2_parts=()
 
 # Claude subscription
 if [ -n "$sub_session_bar" ]; then
-    if [ "$TERM_WIDTH" -ge 100 ]; then
-        claude_str="Claude S:$sub_session_bar"
-        [ -n "$sub_session_reset" ] && claude_str+=" $sub_session_reset"
-        claude_str+="  W:$sub_weekly_bar"
-        [ -n "$sub_weekly_reset" ] && claude_str+=" $sub_weekly_reset"
-    else
-        # Narrow: no bars, just percentages
-        claude_str="Claude S:${sub_session}%"
-        [ -n "$sub_session_reset" ] && claude_str+=" $sub_session_reset"
-        claude_str+=" W:${sub_weekly}%"
-        [ -n "$sub_weekly_reset" ] && claude_str+=" $sub_weekly_reset"
-    fi
+    claude_str="${DIM}Claude sess:${RST}${sub_session_bar}"
+    [ -n "$sub_session_reset" ] && claude_str+=" ${DIM}${CYAN}${sub_session_reset}${RST}"
+    claude_str+="  ${DIM}wk:${RST}${sub_weekly_bar}"
+    [ -n "$sub_weekly_reset" ] && claude_str+=" ${DIM}${CYAN}${sub_weekly_reset}${RST}"
     line2_parts+=("$claude_str")
 elif [ -n "$quotaLabel" ]; then
-    line2_parts+=("Claude $quotaLabel")
+    line2_parts+=("${DIM}Claude${RST} $quotaLabel")
 fi
 
 # Copilot
 if [ -n "$cp_bar" ]; then
-    if [ "$TERM_WIDTH" -ge 100 ]; then
-        cp_str="Copilot $cp_bar"
-    else
-        cp_str="CP:${cp_int}%"
-    fi
-    [ -n "$cp_reset" ] && cp_str+=" $cp_reset"
+    cp_str="${DIM}Copilot${RST} ${cp_bar}"
+    [ -n "$cp_reset" ] && cp_str+=" ${DIM}${CYAN}${cp_reset}${RST}"
     line2_parts+=("$cp_str")
 fi
 
@@ -407,7 +400,7 @@ fi
 
 # Add staleness marker if cache is old (API/tailnet offline)
 stale_prefix=""
-$usage_cache_stale && stale_prefix="~"
+$usage_cache_stale && stale_prefix="${YELLOW}~${RST}"
 
 line2=""
 for ((i=0; i<${#line2_parts[@]}; i++)); do
