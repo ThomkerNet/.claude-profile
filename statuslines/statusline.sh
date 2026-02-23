@@ -201,22 +201,14 @@ IFS=$'\t' read -r model fullPath inputTokens outputTokens contextSize costUsd li
 
 currentDir=$(echo "$fullPath" | awk -F'/' '{n=NF; if(n>=2) print $(n-1)"/"$n; else print $n}')
 
-# Custom session label: find Claude Code session PID by walking process tree.
-# The statusline runs 2 levels deep: Claude Code (semver binary) → bash → statusline.sh
-# so $PPID is the bash wrapper, not Claude Code. Walk up to find the versioned process.
+# Custom session label: the statusline runs as Claude Code → bash-wrapper → statusline.sh
+# so $PPID is the bash-wrapper and its parent is the Claude Code process.
+# Use one ps call to get the grandparent (Claude Code PID) — same as what /cname writes.
 customLabel=""
-_sl_pid=$$
-_session_pid="$PPID"  # fallback
-for _depth in 1 2 3 4 5; do
-    _sl_ppid=$(ps -p "$_sl_pid" -o ppid= 2>/dev/null | tr -d ' ')
-    _sl_comm=$(ps -p "$_sl_ppid" -o comm= 2>/dev/null | tr -d ' ')
-    if [[ "$_sl_comm" =~ ^[0-9]+\.[0-9] ]] || [[ "$_sl_comm" == "claude" ]]; then
-        _session_pid=$_sl_ppid
-        break
-    fi
-    _sl_pid=$_sl_ppid
-done
+_session_pid=$(ps -p "$PPID" -o ppid= 2>/dev/null | tr -d ' ')
+[ -z "$_session_pid" ] && _session_pid="$PPID"
 labelFile="${HOME}/.claude/.session-label-${_session_pid}"
+[ -f "$labelFile" ] || labelFile="${HOME}/.claude/.session-label-${PPID}"
 [ -f "$labelFile" ] || labelFile="${HOME}/.claude/.session-label"
 if [ -f "$labelFile" ]; then
     customLabel=$(tr -d '\n ' < "$labelFile")
