@@ -177,12 +177,17 @@ SYSTEM_STATS=$(get_system_stats)
 CPU_PCT=${SYSTEM_STATS%%:*}
 MEM_PCT=${SYSTEM_STATS#*:}
 
-# ── Read Claude Code JSON from stdin (single jq call) ────────────────────────
+# ── Read Claude Code JSON from stdin ─────────────────────────────────────────
 
 command -v jq &>/dev/null || { echo "Error: jq required"; exit 1; }
 
+# Capture stdin so we can optionally debug it
+_json=$(cat)
+# Debug mode: CLAUDE_STATUSLINE_DEBUG=1 captures raw JSON for inspection
+[ "${CLAUDE_STATUSLINE_DEBUG:-0}" = "1" ] && echo "$_json" > "${HOME}/.claude/.statusline-debug.json"
+
 IFS=$'\t' read -r model fullPath inputTokens outputTokens contextSize costUsd linesAdded linesRemoved < <(
-    jq -r '[
+    echo "$_json" | jq -r '[
         (.model.display_name // "Claude"),
         (.workspace.current_dir // "."),
         (.context_window.total_input_tokens // 0),
@@ -196,9 +201,23 @@ IFS=$'\t' read -r model fullPath inputTokens outputTokens contextSize costUsd li
 
 currentDir=$(echo "$fullPath" | awk -F'/' '{n=NF; if(n>=2) print $(n-1)"/"$n; else print $n}')
 
-# Custom session label
+# Custom session label: find Claude Code session PID by walking process tree.
+# The statusline runs 2 levels deep: Claude Code (semver binary) → bash → statusline.sh
+# so $PPID is the bash wrapper, not Claude Code. Walk up to find the versioned process.
 customLabel=""
-labelFile="${HOME}/.claude/.session-label"
+_sl_pid=$$
+_session_pid="$PPID"  # fallback
+for _depth in 1 2 3 4 5; do
+    _sl_ppid=$(ps -p "$_sl_pid" -o ppid= 2>/dev/null | tr -d ' ')
+    _sl_comm=$(ps -p "$_sl_ppid" -o comm= 2>/dev/null | tr -d ' ')
+    if [[ "$_sl_comm" =~ ^[0-9]+\.[0-9] ]] || [[ "$_sl_comm" == "claude" ]]; then
+        _session_pid=$_sl_ppid
+        break
+    fi
+    _sl_pid=$_sl_ppid
+done
+labelFile="${HOME}/.claude/.session-label-${_session_pid}"
+[ -f "$labelFile" ] || labelFile="${HOME}/.claude/.session-label"
 if [ -f "$labelFile" ]; then
     customLabel=$(tr -d '\n ' < "$labelFile")
     [ -n "$customLabel" ] && customLabel="${YELLOW}${customLabel}${RST} • "
