@@ -30,7 +30,7 @@
       "description": "Step-by-step problem solving"
     },
     {
-      "name": "tkn-aipeerreview",
+      "name": "tkn-aipeer",
       "url": "https://mcp-aipeer.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "AI Peer Review - multi-model code review via LiteLLM (Tailscale HTTPS)"
@@ -70,6 +70,12 @@
       "url": "https://mcp-github-actions.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "GitHub Actions CI/CD - workflow runs, logs, triggers (8 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-homarr",
+      "url": "https://mcp-homarr.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Homarr dashboard management - apps, boards, integrations, groups, users (Tailscale HTTPS)"
     },
     {
       "name": "tkn-komodo",
