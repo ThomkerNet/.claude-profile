@@ -186,13 +186,15 @@ _json=$(cat)
 # Debug mode: CLAUDE_STATUSLINE_DEBUG=1 captures raw JSON for inspection
 [ "${CLAUDE_STATUSLINE_DEBUG:-0}" = "1" ] && echo "$_json" > "${HOME}/.claude/.statusline-debug.json"
 
-IFS=$'\t' read -r model fullPath inputTokens outputTokens contextSize costUsd linesAdded linesRemoved < <(
+IFS=$'\t' read -r model fullPath contextPct currentTokens costUsd linesAdded linesRemoved < <(
     echo "$_json" | jq -r '[
         (.model.display_name // "Claude"),
         (.workspace.current_dir // "."),
-        (.context_window.total_input_tokens // 0),
-        (.context_window.total_output_tokens // 0),
-        (.context_window.context_window_size // 200000),
+        (.context_window.used_percentage // 0),
+        ((.context_window.current_usage.input_tokens // 0)
+          + (.context_window.current_usage.output_tokens // 0)
+          + (.context_window.current_usage.cache_creation_input_tokens // 0)
+          + (.context_window.current_usage.cache_read_input_tokens // 0)),
         (.cost.total_cost_usd // 0),
         (.cost.total_lines_added // 0),
         (.cost.total_lines_removed // 0)
@@ -216,12 +218,8 @@ if [ -f "$labelFile" ]; then
 fi
 
 # Context window (validate numeric)
-[[ "$inputTokens" =~ ^[0-9]+$ ]] || inputTokens=0
-[[ "$outputTokens" =~ ^[0-9]+$ ]] || outputTokens=0
-[[ "$contextSize" =~ ^[0-9]+$ ]] || contextSize=200000
-totalTokens=$((inputTokens + outputTokens))
-contextPct=0
-[ "$contextSize" -gt 0 ] && contextPct=$(( totalTokens * 100 / contextSize ))
+[[ "$contextPct" =~ ^[0-9]+$ ]] || contextPct=0
+[[ "$currentTokens" =~ ^[0-9]+$ ]] || currentTokens=0
 
 # Git branch
 gitBranch=""
@@ -374,7 +372,7 @@ fi
 # --- Line 1 ---
 line1_parts=()
 line1_parts+=("${customLabel}${modelDisplay} ${DIM}${HOSTNAME_SHORT}:${RST}${currentDir}${gitBranch}")
-line1_parts+=("${DIM}ctx${RST} ${ctxBar} ${DIM}$(format_tokens "$totalTokens")${RST}")
+line1_parts+=("${DIM}ctx${RST} ${ctxBar} ${DIM}$(format_tokens "$currentTokens")${RST}")
 [ -n "$sysStr" ] && line1_parts+=("$sysStr")
 [ -n "$specStr" ] && line1_parts+=("$specStr")
 [ -n "$costStr" ] && line1_parts+=("$costStr")
