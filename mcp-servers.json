@@ -96,6 +96,12 @@
       "description": "Audited SSH execution - commands, file transfer, history, pattern analysis, tool promotion (Tailscale HTTPS)"
     },
     {
+      "name": "tkn-tailscale",
+      "url": "https://mcp-tailscale.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Tailscale network management - devices, DNS, ACL, auth keys (31 tools, Tailscale HTTPS)"
+    },
+    {
       "name": "tkn-unifi",
       "url": "https://mcp-tkn-unifi.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -112,6 +118,12 @@
       "url": "https://mcp-usage.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "API usage analytics - Anthropic usage/cost, Claude Code, Copilot billing (5 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-dify",
+      "url": "https://mcp-dify.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Dify AI Platform - workflows, chatbots, knowledge base search (7 tools, Tailscale HTTPS)"
     }
   ]
 }
