@@ -33,7 +33,7 @@
       "name": "tkn-action1",
       "url": "https://mcp-action1.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Action1 RMM - orgs, endpoints, groups, patches/vulnerabilities, policies, software inventory (21 tools, Tailscale HTTPS)"
+      "description": "Action1 RMM endpoint management"
     },
     {
       "name": "tkn-aipeer",
@@ -48,10 +48,16 @@
       "description": "Authentik identity provider management (Tailscale HTTPS)"
     },
     {
-      "name": "tkn-cloudflare",
+      "name": "tkn-bnx-cloudflare",
       "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Cloudflare DNS, Zero Trust, Tunnels, DLP (116 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-dify",
+      "url": "https://mcp-dify.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Dify AI Platform management"
     },
     {
       "name": "tkn-firecrawl",
@@ -60,28 +66,40 @@
       "description": "Firecrawl web scraping, crawling, and search (Tailscale HTTPS)"
     },
     {
+      "name": "tkn-github-actions",
+      "url": "https://mcp-github-actions.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "GitHub Actions CI/CD management"
+    },
+    {
       "name": "tkn-google-workspace",
       "url": "https://mcp-google-workspace.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Google Workspace for simonbarker@gmail.com (Gmail, Calendar, Drive, Docs, Sheets, Tasks — 86 tools, HITL, Tailscale HTTPS)"
+      "description": "Google Workspace (simonbarker@gmail.com) - Gmail, Drive, Calendar, Docs"
     },
     {
       "name": "tkn-google-workspace-bnx",
       "url": "https://mcp-google-workspace-bnx.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Google Workspace for simon@boroughnexus.com (Gmail, Calendar, Drive, Docs, Sheets, Tasks — 86 tools, HITL, Tailscale HTTPS)"
+      "description": "Google Workspace (simon@boroughnexus.com) - Gmail, Drive, Calendar, Docs"
     },
     {
-      "name": "tkn-github-actions",
-      "url": "https://mcp-github-actions.gate-hexatonic.ts.net/mcp",
+      "name": "tkn-hitl",
+      "url": "https://mcp-hitl.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "GitHub Actions CI/CD - workflow runs, logs, triggers (8 tools, Tailscale HTTPS)"
+      "description": "Human-in-the-loop approval via Telegram"
     },
     {
       "name": "tkn-homarr",
       "url": "https://mcp-homarr.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Homarr dashboard management - apps, boards, integrations, groups, users (Tailscale HTTPS)"
+      "description": "Homarr dashboard management"
+    },
+    {
+      "name": "tkn-icinga",
+      "url": "https://mcp-icinga.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Icinga2 monitoring management"
     },
     {
       "name": "tkn-komodo",
@@ -90,16 +108,28 @@
       "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-openclaw",
+      "url": "https://mcp-openclaw.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "OpenClaw autonomous AI agent interaction"
+    },
+    {
       "name": "tkn-plane",
       "url": "https://mcp-plane.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Plane project management - issues, cycles, modules, workflows (27 tools, Tailscale HTTPS)"
+      "description": "Plane project management (27 tools)"
+    },
+    {
+      "name": "tkn-realdebrid",
+      "url": "https://mcp-realdebrid.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Real-Debrid account, torrents, and downloads management"
     },
     {
       "name": "tkn-ssh",
       "url": "https://mcp-ssh.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Audited SSH execution - commands, file transfer, history, pattern analysis, tool promotion (Tailscale HTTPS)"
+      "description": "Audited SSH execution on remote hosts"
     },
     {
       "name": "tkn-tailscale",
@@ -123,25 +153,7 @@
       "name": "tkn-usage",
       "url": "https://mcp-usage.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "API usage analytics - Anthropic usage/cost, Claude Code, Copilot billing (5 tools, Tailscale HTTPS)"
-    },
-    {
-      "name": "tkn-dify",
-      "url": "https://mcp-dify.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "Dify AI Platform - workflows, chatbots, knowledge base search (7 tools, Tailscale HTTPS)"
-    },
-    {
-      "name": "tkn-icinga",
-      "url": "https://mcp-icinga.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "Icinga2 monitoring - hosts, services, problems, downtimes, acknowledgements, checks, notifications (12 tools, Tailscale HTTPS)"
-    },
-    {
-      "name": "tkn-realdebrid",
-      "url": "https://mcp-realdebrid.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "Real-Debrid account management - torrents, downloads, link unrestriction, multi-account support (HITL, Tailscale HTTPS)"
+      "description": "API usage analytics (Anthropic, Copilot)"
     }
   ]
 }
