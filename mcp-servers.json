@@ -30,6 +30,12 @@
       "description": "Step-by-step problem solving"
     },
     {
+      "name": "tkn-action1",
+      "url": "https://mcp-action1.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Action1 RMM - orgs, endpoints, groups, patches/vulnerabilities, policies, software inventory (21 tools, Tailscale HTTPS)"
+    },
+    {
       "name": "tkn-aipeer",
       "url": "https://mcp-aipeer.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -124,6 +130,18 @@
       "url": "https://mcp-dify.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Dify AI Platform - workflows, chatbots, knowledge base search (7 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-icinga",
+      "url": "https://mcp-icinga.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Icinga2 monitoring - hosts, services, problems, downtimes, acknowledgements, checks, notifications (12 tools, Tailscale HTTPS)"
+    },
+    {
+      "name": "tkn-realdebrid",
+      "url": "https://mcp-realdebrid.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Real-Debrid account management - torrents, downloads, link unrestriction, multi-account support (HITL, Tailscale HTTPS)"
     }
   ]
 }
