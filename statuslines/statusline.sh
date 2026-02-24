@@ -256,7 +256,8 @@ if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
             (.claude_sub.weekly_pct // ""),
             (.claude_sub.session_reset_at // ""),
             (.claude_sub.weekly_reset_at // ""),
-            (.copilot.premium_pct // "")
+            (.copilot.premium_pct // ""),
+            (.cost_7d_usd // "")
         ' "$USAGE_CACHE" 2>/dev/null
     )
     cache_time="${_u[0]:-0}"
@@ -267,6 +268,7 @@ if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
     sub_session_reset_at="${_u[5]}"
     sub_weekly_reset_at="${_u[6]}"
     cp_premium_pct="${_u[7]}"
+    cost_7d="${_u[8]}"
     [[ "$cache_time" =~ ^[0-9]+$ ]] || cache_time=0
     cache_age=$(( $(date +%s) - cache_time ))
     if [ "$cache_age" -lt 300 ]; then
@@ -338,6 +340,13 @@ if $usage_cache_valid; then
     fi
 fi
 
+# ── 7-day cross-platform cost ─────────────────────────────────────────────────
+
+cost7dStr=""
+if $usage_cache_valid && [ -n "$cost_7d" ] && [ "$cost_7d" != "null" ] && [ "$cost_7d" != "0" ]; then
+    cost7dStr="${DIM}🦞7d:\$${RST}$(LC_NUMERIC=C printf '%.2f' "$cost_7d")"
+fi
+
 # ── Build model display ─────────────────────────────────────────────────────
 
 modelDisplay="${DIM}[${RST}${model}${DIM}]${RST}"
@@ -404,8 +413,11 @@ if [ -n "$cp_bar" ]; then
     line2_parts+=("$cp_str")
 fi
 
-# API usage
+# API usage (today)
 [ -n "$apiStr" ] && line2_parts+=("$apiStr")
+
+# 7-day cross-platform cost
+[ -n "$cost7dStr" ] && line2_parts+=("$cost7dStr")
 
 # Add staleness marker if cache is old (API/tailnet offline)
 stale_prefix=""

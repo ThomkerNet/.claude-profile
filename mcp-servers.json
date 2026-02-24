@@ -42,6 +42,12 @@
       "description": "AI Peer Review - multi-model code review via LiteLLM (Tailscale HTTPS)"
     },
     {
+      "name": "tkn-android",
+      "url": "https://mcp-android.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Android reverse engineering - emulator + mitmproxy (Tailscale HTTPS)"
+    },
+    {
       "name": "tkn-authentik",
       "url": "https://mcp-authentik.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -154,6 +160,12 @@
       "url": "https://mcp-usage.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "API usage analytics (Anthropic, Copilot)"
+    },
+    {
+      "name": "tkn-whatsapp",
+      "url": "https://mcp-whatsapp.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "WhatsApp messaging via whatsmeow bridge (Tailscale HTTPS)"
     }
   ]
 }

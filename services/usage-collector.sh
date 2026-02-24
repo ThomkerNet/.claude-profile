@@ -28,19 +28,24 @@ NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 SUMMARY_FILE=$(mktemp)
 QUOTA_FILE=$(mktemp)
 COPILOT_SCRAPE_FILE=$(mktemp)
-trap 'rm -f "$SUMMARY_FILE" "$QUOTA_FILE" "$COPILOT_SCRAPE_FILE"' EXIT
+COST_7D_FILE=$(mktemp)
+trap 'rm -f "$SUMMARY_FILE" "$QUOTA_FILE" "$COPILOT_SCRAPE_FILE" "$COST_7D_FILE"' EXIT
 
 curl -s --connect-timeout 3 --max-time 5 \
     "$API_BASE/api/v1/summary?starting_at=$TODAY&ending_at=$NOW" \
     > "$SUMMARY_FILE" 2>/dev/null &
 
-curl -s --connect-timeout 3 --max-time 8 \
+curl -s --connect-timeout 3 --max-time 25 \
     "$API_BASE/api/v1/scraper/claude-quota" \
     > "$QUOTA_FILE" 2>/dev/null &
 
-curl -s --connect-timeout 3 --max-time 8 \
+curl -s --connect-timeout 3 --max-time 25 \
     "$API_BASE/api/v1/scraper/github-copilot" \
     > "$COPILOT_SCRAPE_FILE" 2>/dev/null &
+
+curl -s --connect-timeout 3 --max-time 10 \
+    "$API_BASE/api/v1/cost/7d" \
+    > "$COST_7D_FILE" 2>/dev/null &
 
 wait
 
@@ -99,6 +104,14 @@ if [ -n "$COPILOT_SCRAPE" ] && echo "$COPILOT_SCRAPE" | jq -e '.status == "succe
     COPILOT_PLAN=$(echo "$COPILOT_SCRAPE" | jq -r '.plan // null')
 fi
 
+# --- 7-day cross-platform cost (Anthropic + LiteLLM/Gemini) ---
+COST_7D="null"
+
+COST_7D_RESP=$(cat "$COST_7D_FILE")
+if [ -n "$COST_7D_RESP" ] && echo "$COST_7D_RESP" | jq -e '.total_usd' &>/dev/null; then
+    COST_7D=$(echo "$COST_7D_RESP" | jq '.total_usd // null')
+fi
+
 # Atomic write (tmp + mv prevents partial reads by statusline)
 cat > "${CACHE_FILE}.tmp" << EOF
 {
@@ -120,6 +133,7 @@ cat > "${CACHE_FILE}.tmp" << EOF
     "premium_pct": $COPILOT_PREMIUM_PCT,
     "plan": "$COPILOT_PLAN"
   },
+  "cost_7d_usd": $COST_7D,
   "errors": $ERRORS
 }
 EOF
