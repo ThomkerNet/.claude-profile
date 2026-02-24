@@ -5,136 +5,109 @@ description: Sync MCP servers from TKNet-MCPServer repo to claude-profile mcp-se
 
 # Sync TKN MCP Servers to Claude Profile
 
-Update `~/.claude-profile/mcp-servers.json` with all deployed MCP servers from the TKNet-MCPServer compose.yaml.
+Update `~/.claude-profile/mcp-servers.json` with all deployed MCP servers.
 
 ## Critical: Source of Truth
 
-**THE ONLY SOURCE OF TRUTH FOR PORTS IS: `~/git-bnx/TKN/TKNet-MCPServer/compose.yaml`**
+**THE ONLY SOURCE OF TRUTH IS: `~/git-bnx/TKN/TKNet-MCPServer/CLAUDE.md` — the "MCP Server Connectivity" table**
 
-- ❌ DO NOT use README.md for port numbers (it's often outdated)
-- ✅ DO parse actual port mappings from compose.yaml
-- ✅ DO use README.md ONLY for descriptions (matching by server name)
+All MCP servers are deployed as **standalone stacks** (the monolith was decommissioned). The `compose.yaml` in TKNet-MCPServer is for the legacy monolith mode and lists servers that are NOT individually deployed — do not use it.
+
+- ✅ **DO** parse the connectivity table from `CLAUDE.md` (section: "MCP Server Connectivity")
+- ✅ **DO** use the exact URLs from that table — they are verified Tailscale HTTPS endpoints
+- ❌ DO NOT use `compose.yaml` for the server list (monolith mode, not standalone)
+- ❌ DO NOT use README.md for URLs (often outdated)
 
 ## Task
 
-1. **Parse compose.yaml for deployed servers**
-   - Read `~/git-bnx/TKN/TKNet-MCPServer/compose.yaml`
-   - Find all uncommented lines matching: `- "XXXX:XXXX"  # server-name`
-   - Extract port (XXXX) and server name from comment
-   - Skip any line starting with `#` (commented out)
+1. **Parse CLAUDE.md for deployed servers**
+   - Read `~/git-bnx/TKN/TKNet-MCPServer/CLAUDE.md`
+   - Find the "MCP Server Connectivity" section
+   - Parse the table: `| Server | Stack | HTTPS URL |`
+   - Extract server name (column 1) and HTTPS URL (column 3) for each row
+   - Strip backticks from the URL value
 
 2. **Read current MCP configuration**
    - Read `~/.claude-profile/mcp-servers.json`
 
-3. **Update/fix ALL TKN server entries**
-   - For each server in compose.yaml:
-     - If missing from mcp-servers.json: ADD it
-     - If exists but wrong port: UPDATE the URL
-     - Preserve all other fields (description, etc.)
+3. **Update/fix ALL TKN/BNX server entries**
+   - For each server in CLAUDE.md connectivity table:
+     - If missing from mcp-servers.json: ADD it with the verified URL
+     - If exists with correct URL: keep unchanged
+     - If exists with wrong URL: UPDATE to the CLAUDE.md URL
+   - Preserve existing descriptions where present; use fallback for new servers
 
 4. **Remove orphaned entries**
-   - If a TKN/BNX server exists in mcp-servers.json but NOT in compose.yaml:
-     - Remove it (not deployed anymore)
+   - If a TKN/BNX server exists in mcp-servers.json but NOT in CLAUDE.md connectivity table: remove it
 
 5. **Get descriptions**
-   - Try README.md table, matching by server NAME (not port)
-   - Fallback to generic: `{service-name} management`
+   - Preserve existing descriptions from mcp-servers.json
+   - For new servers: check README.md table (match by server name, extract description column)
+   - Fallback: `{service-name} management`
 
 6. **Write updated mcp-servers.json**
-   - Preserve non-TKN servers (memory, context7, puppeteer, etc.)
-   - Write the complete updated JSON
+   - Preserve non-TKN/BNX servers (memory, context7, puppeteer, sequential-thinking) exactly as-is
+   - Write TKN/BNX servers alphabetically after them
 
 7. **Report changes**
    - Added: X servers
-   - Updated: Y servers
-   - Removed: Z servers
+   - Updated: Y servers (URL changed)
+   - Removed: Z servers (not in CLAUDE.md anymore)
    - Unchanged: N servers
 
 ## Parsing Logic
 
-### Extract from compose.yaml
+### Extract from CLAUDE.md
 
-```bash
-# Read the ports section (lines 70-99)
-# Match pattern: - "8200:8200"  # tkn-cloudflare
-# Extract: port=8200, name=tkn-cloudflare
+```
+# Find the MCP Server Connectivity section, then parse table rows:
+# | tkn-action1 | mcp-action1 | `https://mcp-action1.gate-hexatonic.ts.net/mcp` |
+#   ^^^^^^^^^^^                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#   server name (col 1)           URL (col 3, strip backticks)
 ```
 
-**Example lines:**
-```yaml
-- "8200:8200"  # tkn-cloudflare    → port=8200, name=tkn-cloudflare
-- "8221:8221"  # tkn-media         → port=8221, name=tkn-media
-# - "8101:8101"  # bnx-azure        → SKIP (commented out)
+The table looks like:
+```markdown
+| Server | Stack | HTTPS URL |
+|--------|-------|-----------|
+| tkn-action1 | mcp-action1 | `https://mcp-action1.gate-hexatonic.ts.net/mcp` |
+| tkn-aipeer | mcp-aipeer | `https://mcp-aipeer.gate-hexatonic.ts.net/mcp` |
+...
 ```
-
-### Get descriptions from README
-
-```bash
-# Read README.md table (lines 44-66)
-# Match by server NAME (not port!)
-# Example: | tkn-cloudflare | 8200 | DNS and zone management |
-#          ^^^^^^^^^^^^^^^^        ^^^^^^^^^^^^^^^^^^^^^^^^
-#          name (match this)       description (extract this)
-```
-
-**Important:** Match by column 1 (server name), extract column 3 (description). Ignore column 2 (port) as it may be outdated.
 
 ### Fallback description
 
 If not in README:
 - `tkn-{service}` → `{service} management`
-- `bnx-{service}` → `{service} management (BoroughNexus business)`
+- `bnx-{service}` → `{service} management (BoroughNexus)`
 
 ## Output Format
 
-Each server entry uses streamable-http transport with Tailscale HTTPS:
+Each server entry:
 ```json
 {
-  "name": "tkn-cloudflare",
-  "url": "https://mcp-<hostname>.gate-hexatonic.ts.net/mcp",
+  "name": "tkn-action1",
+  "url": "https://mcp-action1.gate-hexatonic.ts.net/mcp",
   "transport": "streamable-http",
-  "description": "DNS and zone management (Tailscale HTTPS)"
+  "description": "Action1 RMM endpoint management"
 }
 ```
 
-**Tailscale hostname mapping:** The hostname in the URL is configured in Tailscale serve config. For existing servers, **preserve the current URL from mcp-servers.json**. For NEW servers, generate a proposed URL following the common pattern:
-
-1. Strip `tkn-` or `bnx-` prefix from compose service name
-2. Prepend `mcp-`
-3. Form: `https://mcp-{stripped-name}.gate-hexatonic.ts.net/mcp`
-
-Example: `tkn-media` → `https://mcp-media.gate-hexatonic.ts.net/mcp`
-
-Mark the proposed URL as **UNVERIFIED** in the report. After writing mcp-servers.json, verify with:
-```bash
-curl -sf -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" https://mcp-{name}.gate-hexatonic.ts.net/mcp -d '{}'
-```
-If the health check fails (non-200), flag it for operator to configure Tailscale serve for port XXXX.
-
 ## Important Rules
 
-1. **Only update TKN/BNX servers** - Don't touch memory, context7, puppeteer, sequential-thinking
-2. **Match by name, not port** - When looking up descriptions in README
-3. **Preserve existing URLs** - TKN servers use Tailscale HTTPS hostnames configured outside compose.yaml
-4. **Skip commented lines** - Lines starting with `#` in compose.yaml
-5. **Remove orphans** - TKN/BNX servers in JSON but not in compose.yaml
-6. **Preserve order** - Keep non-TKN servers at the top, TKN servers alphabetically
-7. **Use transport/url fields** - Format: `"url": "<URL>", "transport": "streamable-http"` (not command field with mcp-remote)
+1. **Only update TKN/BNX servers** — don't touch memory, context7, puppeteer, sequential-thinking
+2. **CLAUDE.md is canonical** — URLs in CLAUDE.md are verified; trust them
+3. **Preserve existing descriptions** — don't overwrite good descriptions with generic fallbacks
+4. **Remove orphans** — TKN/BNX servers in JSON but not in CLAUDE.md connectivity table
+5. **Alphabetical order** — TKN/BNX servers sorted by name after the non-TKN servers
+6. **Use transport/url fields** — `"url": "<URL>", "transport": "streamable-http"` (not stdio command)
 
 ## Example Execution
 
-**Input: compose.yaml**
-```yaml
-ports:
-  - "8200:8200"  # tkn-cloudflare
-  - "8221:8221"  # tkn-media
-  # - "8100:8100"  # bnx-cloudflare (commented - skip)
-```
-
-**Input: README.md**
+**Input: CLAUDE.md connectivity table**
 ```markdown
-| tkn-cloudflare | 8200 | DNS and zone management |
-| tkn-media | 8207 | Plex, Jellyfin |  ← WRONG PORT (ignore)
+| tkn-bnx-cloudflare | mcp-tkn-bnx-cloudflare | `https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp` |
+| tkn-komodo | mcp-komodo | `https://mcp-komodo.gate-hexatonic.ts.net/mcp` |
 ```
 
 **Input: mcp-servers.json (before)**
@@ -142,37 +115,38 @@ ports:
 {
   "servers": [
     {"name": "memory", "command": "..."},
-    {"name": "tkn-cloudflare", "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "DNS and zone management"}
+    {"name": "tkn-bnx-cloudflare", "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "Cloudflare DNS, Zero Trust"},
+    {"name": "tkn-old-server", "url": "https://mcp-old.gate-hexatonic.ts.net/mcp", "transport": "streamable-http"}
   ]
 }
 ```
 
-**Output: mcp-servers.json (after)** (tkn-media is new in compose.yaml)
+**Output: mcp-servers.json (after)**
 ```json
 {
   "servers": [
     {"name": "memory", "command": "..."},
-    {"name": "tkn-cloudflare", "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "DNS and zone management"},
-    {"name": "tkn-media", "url": "https://mcp-media.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "Plex, Jellyfin (Tailscale HTTPS)"}
+    {"name": "tkn-bnx-cloudflare", "url": "https://mcp-tkn-bnx-cloudflare.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "Cloudflare DNS, Zero Trust"},
+    {"name": "tkn-komodo", "url": "https://mcp-komodo.gate-hexatonic.ts.net/mcp", "transport": "streamable-http", "description": "komodo management"}
   ]
 }
 ```
 
 **Report:**
-- Added: 1 server (tkn-media, port 8221, UNVERIFIED URL - verifying...)
-  - `curl -sf https://mcp-media.gate-hexatonic.ts.net/sse` → 200 OK (verified)
-- Unchanged: 1 server (tkn-cloudflare)
+- Added: 1 server (tkn-komodo)
+- Removed: 1 server (tkn-old-server — not in CLAUDE.md)
+- Unchanged: 1 server (tkn-bnx-cloudflare)
 
 ## Implementation Steps
 
-1. Use Read tool on `~/git-bnx/TKN/TKNet-MCPServer/compose.yaml` (lines 70-99)
-2. Use Grep to extract port lines: `pattern='^\s*- "[0-9]+:[0-9]+".*#'`
-3. Parse each line to get port and name
-4. Use Read tool on `~/git-bnx/TKN/TKNet-MCPServer/README.md` (lines 44-70)
-5. Parse table to map server names → descriptions
-6. Use Read tool on `~/.claude-profile/mcp-servers.json`
-7. Build updated server list:
+1. Read `~/git-bnx/TKN/TKNet-MCPServer/CLAUDE.md`
+2. Find the "MCP Server Connectivity" section and parse the table rows
+3. Extract: server name (col 1), URL (col 3, strip backticks)
+4. Read `~/.claude-profile/mcp-servers.json`
+5. Read `~/git-bnx/TKN/TKNet-MCPServer/README.md` for descriptions (match by server name)
+6. Build updated server list:
    - Keep all non-TKN/BNX servers as-is
-   - Add/update TKN/BNX servers from compose.yaml
-8. Use Write tool to save updated `~/.claude-profile/mcp-servers.json`
-9. Report what changed
+   - Add/update TKN/BNX servers from CLAUDE.md table
+   - Remove TKN/BNX servers not in CLAUDE.md table
+7. Write updated `~/.claude-profile/mcp-servers.json`
+8. Report what changed
