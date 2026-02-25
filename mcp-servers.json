@@ -144,6 +144,12 @@
       "description": "Real-Debrid account, torrents, and downloads management"
     },
     {
+      "name": "tkn-remote-code-auto",
+      "url": "https://mcp-remote-code-auto.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Remote code auto AI coding agent control (19 tools, HITL)"
+    },
+    {
       "name": "tkn-ssh",
       "url": "https://mcp-ssh.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
