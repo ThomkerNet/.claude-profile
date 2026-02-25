@@ -48,6 +48,12 @@
       "description": "Android reverse engineering - emulator + mitmproxy (Tailscale HTTPS)"
     },
     {
+      "name": "tkn-arr",
+      "url": "https://mcp-arr.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Sonarr (SD+4K), Radarr (SD+4K), and Prowlarr management"
+    },
+    {
       "name": "tkn-authentik",
       "url": "https://mcp-authentik.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
