@@ -54,6 +54,12 @@
       "description": "Sonarr (SD+4K), Radarr (SD+4K), and Prowlarr management"
     },
     {
+      "name": "tkn-homeassistant",
+      "url": "https://mcp-homeassistant.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Home Assistant automation and device management"
+    },
+    {
       "name": "tkn-authentik",
       "url": "https://mcp-authentik.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
