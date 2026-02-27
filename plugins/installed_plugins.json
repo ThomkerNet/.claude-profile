@@ -14,10 +14,10 @@
     "ralph-loop@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/home/sbarker/.claude/plugins/cache/claude-plugins-official/ralph-loop/99e11d959269",
-        "version": "99e11d959269",
+        "installPath": "/home/sbarker/.claude/plugins/cache/claude-plugins-official/ralph-loop/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-02-09T17:16:21.433Z",
-        "lastUpdated": "2026-02-24T19:46:45.611Z",
+        "lastUpdated": "2026-02-25T08:14:07.131Z",
         "gitCommitSha": "2cd88e7947b7382e045666abee790c7f55f669f3"
       }
     ],
@@ -34,10 +34,10 @@
     "frontend-design@claude-plugins-official": [
       {
         "scope": "user",
-        "installPath": "/home/sbarker/.claude/plugins/cache/claude-plugins-official/frontend-design/99e11d959269",
-        "version": "99e11d959269",
+        "installPath": "/home/sbarker/.claude/plugins/cache/claude-plugins-official/frontend-design/55b58ec6e564",
+        "version": "55b58ec6e564",
         "installedAt": "2026-02-22T21:25:14.645Z",
-        "lastUpdated": "2026-02-24T19:46:45.608Z",
+        "lastUpdated": "2026-02-25T08:14:07.125Z",
         "gitCommitSha": "aa296ec81e8ccb49c9784f167c2c0aa625a86cec"
       }
     ]
