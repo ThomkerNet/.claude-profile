@@ -126,6 +126,12 @@
       "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-ollama",
+      "url": "https://mcp-ollama.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Ollama model management - list, pull, push, chat, embeddings (13 tools)"
+    },
+    {
       "name": "tkn-openclaw",
       "url": "https://mcp-openclaw.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
