@@ -180,6 +180,12 @@
       "description": "API usage analytics (Anthropic, Copilot)"
     },
     {
+      "name": "tkn-webshare",
+      "url": "https://mcp-webshare.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Webshare proxy service - subscription, bandwidth, proxy list, IP authorization (8 tools)"
+    },
+    {
       "name": "tkn-whatsapp",
       "url": "https://mcp-whatsapp.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
