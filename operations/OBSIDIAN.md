@@ -254,24 +254,42 @@ Use Azure Container Apps instead of AKS or App Service.
 
 ## Search Best Practices
 
-### Scoped Searches (Preferred)
+### Dify Semantic Search (Preferred for content queries)
+
+The Obsidian vault is synced to Dify Knowledge Base ("Obsidian Vault", dataset `f8a1fa0a-f2d3-4a0b-81d5-7e6389442231`) hourly. **Use Dify search instead of direct file reads or Explore agent** — it's faster and uses semantic/embedding search across the whole vault.
+
+```
+# Preferred: semantic search via Dify MCP
+mcp__tkn-dify__search_knowledge_base(
+  dataset_id="f8a1fa0a-f2d3-4a0b-81d5-7e6389442231",
+  query="Azure deployment BriefHours"
+)
+```
+
+Use direct file access only when:
+- You need to **edit** a specific note
+- The note path is already known and you want the full raw content
+- The vault sync may be stale (check `state.json` `last_commit`)
+
+---
+
+### Direct File Access (When editing or reading a known path)
 
 ```bash
-# Good - project-specific
+# Read a specific note
+Read ~/personal-obsidian/Projects/BoroughNexus/Index.md
+
+# Scoped grep when you need line-level results
 Grep "authentication" ~/personal-obsidian/Projects/BriefHours/
-
-# Good - area-specific
-Grep "docker" ~/personal-obsidian/Projects/TKN/Infrastructure/
-
-# Avoid - vault-wide (can leak context)
-Grep "authentication" ~/personal-obsidian/
 ```
+
+**Avoid vault-wide file traversal** — use Dify search instead.
 
 ---
 
 ### Multi-Step Searches
 
-For complex queries, use the Task tool with Explore agent:
+For complex queries spanning multiple topics, Dify search still preferred. Use Explore agent only if Dify results are insufficient:
 
 ```
 Task: Find all documentation related to Azure deployment across BriefHours notes
@@ -478,8 +496,9 @@ Azure PostgreSQL firewall rule expired.
 
 | Task | Command |
 |------|---------|
+| **Search content** | `mcp__tkn-dify__search_knowledge_base` dataset `f8a1fa0a-f2d3-4a0b-81d5-7e6389442231` |
 | **Read note** | `Read ~/personal-obsidian/path/to/note.md` |
-| **Search content** | `Grep "term" ~/personal-obsidian/Projects/ProjectName/` |
+| **Search files** | `Grep "term" ~/personal-obsidian/Projects/ProjectName/` |
 | **Find notes** | `Glob "**/*.md" ~/personal-obsidian/Projects/ProjectName/` |
 | **Edit note** | `Edit ~/personal-obsidian/path/to/note.md` |
 | **Create note** | `Write ~/personal-obsidian/path/to/new-note.md` |
