@@ -277,10 +277,10 @@ The server has **API fallback** — if primary model provider is unavailable, it
 
 ```
 # Quick review of a function
-quick_review(code: "...", language: "python")
+quick_review(content: "...")
 
 # Thorough security review with specific model
-peer_review(code: "...", language: "typescript", review_type: "security", model: "gpt-5.2")
+peer_review(content: "...", review_type: "security", model: "gpt-5.2")
 
 # Consult on a debugging problem
 peer_consult(question: "Why might this race condition occur?", context: "...", consultation_type: "debugging")
