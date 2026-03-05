@@ -257,7 +257,11 @@ if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
             (.claude_sub.session_reset_at // ""),
             (.claude_sub.weekly_reset_at // ""),
             (.copilot.premium_pct // ""),
-            (.cost_7d_usd // "")
+            (.cost_7d_usd // ""),
+            (.anthropic_cost_1d // ""),
+            (.anthropic_cost_7d // ""),
+            (.gemini_cost_1d // ""),
+            (.gemini_cost_7d // "")
         ' "$USAGE_CACHE" 2>/dev/null
     )
     cache_time="${_u[0]:-0}"
@@ -269,6 +273,10 @@ if [ -f "$USAGE_CACHE" ] && command -v jq &>/dev/null; then
     sub_weekly_reset_at="${_u[6]}"
     cp_premium_pct="${_u[7]}"
     cost_7d="${_u[8]}"
+    anthropic_cost_1d="${_u[9]}"
+    anthropic_cost_7d="${_u[10]}"
+    gemini_cost_1d="${_u[11]}"
+    gemini_cost_7d="${_u[12]}"
     [[ "$cache_time" =~ ^[0-9]+$ ]] || cache_time=0
     cache_age=$(( $(date +%s) - cache_time ))
     if [ "$cache_age" -lt 300 ]; then
@@ -340,11 +348,31 @@ if $usage_cache_valid; then
     fi
 fi
 
-# ── 7-day cross-platform cost ─────────────────────────────────────────────────
+# ── Anthropic & Gemini API costs (1d / 7d) ────────────────────────────────────
 
-cost7dStr=""
-if $usage_cache_valid && [ -n "$cost_7d" ] && [ "$cost_7d" != "null" ] && [ "$cost_7d" != "0" ]; then
-    cost7dStr="${DIM}🦞7d:\$${RST}$(LC_NUMERIC=C printf '%.2f' "$cost_7d")"
+# Helper: format a cost value as "$X.XX" or "-" if empty/null/zero
+fmt_cost() {
+    local v="$1"
+    [ -z "$v" ] || [ "$v" = "null" ] || [ "$v" = "" ] && { echo "-"; return; }
+    # Strip leading/trailing whitespace
+    v="${v//[[:space:]]/}"
+    LC_NUMERIC=C printf '$%.2f' "$v" 2>/dev/null || echo "-"
+}
+
+anthropicCostStr=""
+geminiCostStr=""
+if $usage_cache_valid; then
+    a1d=$(fmt_cost "$anthropic_cost_1d")
+    a7d=$(fmt_cost "$anthropic_cost_7d")
+    g1d=$(fmt_cost "$gemini_cost_1d")
+    g7d=$(fmt_cost "$gemini_cost_7d")
+    # Only show if we have at least one real value (not all dashes)
+    if [ "$a1d" != "-" ] || [ "$a7d" != "-" ]; then
+        anthropicCostStr="${DIM}Ant${RST} ${a1d}${DIM}/1d${RST} ${a7d}${DIM}/7d${RST}"
+    fi
+    if [ "$g1d" != "-" ] || [ "$g7d" != "-" ]; then
+        geminiCostStr="${DIM}Gem${RST} ${g1d}${DIM}/1d${RST} ${g7d}${DIM}/7d${RST}"
+    fi
 fi
 
 # ── Build model display ─────────────────────────────────────────────────────
@@ -416,8 +444,11 @@ fi
 # API usage (today)
 [ -n "$apiStr" ] && line2_parts+=("$apiStr")
 
-# 7-day cross-platform cost
-[ -n "$cost7dStr" ] && line2_parts+=("$cost7dStr")
+# Anthropic API costs (1d / 7d)
+[ -n "$anthropicCostStr" ] && line2_parts+=("$anthropicCostStr")
+
+# Gemini API costs (1d / 7d)
+[ -n "$geminiCostStr" ] && line2_parts+=("$geminiCostStr")
 
 # Add staleness marker if cache is old (API/tailnet offline)
 stale_prefix=""
