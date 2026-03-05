@@ -126,6 +126,18 @@
       "description": "Komodo build and deployment management (92 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-n8n",
+      "url": "https://mcp-n8n.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "n8n workflow automation - manage workflows, executions, webhooks (12 tools)"
+    },
+    {
+      "name": "tkn-obsidian",
+      "url": "https://mcp-obsidian.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "obsidian management"
+    },
+    {
       "name": "tkn-ollama",
       "url": "https://mcp-ollama.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -168,6 +180,12 @@
       "description": "Tailscale network management - devices, DNS, ACL, auth keys (31 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-telegram",
+      "url": "https://mcp-telegram.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Telegram messaging via Telethon MTProto - user account (20 tools)"
+    },
+    {
       "name": "tkn-unifi",
       "url": "https://mcp-tkn-unifi.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -186,12 +204,6 @@
       "description": "API usage analytics (Anthropic, Copilot)"
     },
     {
-      "name": "tkn-telegram",
-      "url": "https://mcp-telegram.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "Telegram messaging via Telethon MTProto - user account (20 tools)"
-    },
-    {
       "name": "tkn-webshare",
       "url": "https://mcp-webshare.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -202,12 +214,6 @@
       "url": "https://mcp-whatsapp.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "WhatsApp messaging via whatsmeow bridge (Tailscale HTTPS)"
-    },
-    {
-      "name": "tkn-n8n",
-      "url": "https://mcp-n8n.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "n8n workflow automation - manage workflows, executions, webhooks (12 tools)"
     }
   ]
 }
