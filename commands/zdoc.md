@@ -15,6 +15,7 @@
 2. **Analyze context** - Review what was changed and why
 3. **Explore Obsidian** - Search the vault to find the most appropriate location
 4. **Update Obsidian** - Add relevant notes intelligently
+5. **Close Plane tasks** - Complete any Plane issues that were resolved by this work
 
 ## Execution Steps
 
@@ -93,6 +94,28 @@ Grep "<component name>" <vault_path>/Projects/
 
 **Use WikiLinks** (`[[Note Name]]`) to connect related concepts.
 
+### Step 6: Close Plane Tasks
+
+After documenting, check if any Plane issues were resolved by the committed work.
+
+**Detection:** Look for Plane issue references in:
+- Commit messages (e.g. "MCP-129", "TKN-85")
+- Session context (issues discussed, tasks completed)
+- Code comments referencing issue IDs
+
+**For each resolved issue:**
+1. Use `complete_issue` to transition to Done
+2. Add a brief `comment_html` summarizing what was done and which commit resolved it
+3. If the issue is already completed, skip silently
+
+**Project IDs:**
+- MCP: `8efae843-0c06-4ba8-b8f4-04461e6c8922`
+- TKN: `1974b497-eb64-41b4-b927-8fcb80114bc6`
+- INBOX: `0dd1bf14-2969-4c14-8e70-e4c4531cf137`
+- Workspace: `thomkernet`
+
+**If no Plane issues are related, skip this step.**
+
 ## Examples
 
 ### Example 1: Claude Profile Update
@@ -130,5 +153,10 @@ Docker/homelab configuration:
    → Added: MCP server configuration notes
    → Linked: [[MCP-Server-Architecture]], [[TKNet-MCPServer]]
 
-✨ Done! Changes committed, pushed, and documented.
+✅ Plane Tasks:
+   → Completed MCP-129: Renamed get_gemini_costs
+   → Completed MCP-127: Removed openclaw from tool
+   → Skipped MCP-130: Not resolved by this work
+
+✨ Done! Changes committed, pushed, documented, and tasks closed.
 ```
