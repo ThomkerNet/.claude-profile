@@ -163,9 +163,9 @@
     },
     {
       "name": "tkn-remote-code-nuc",
-      "url": "https://mcp-remote-code-nuc.gate-hexatonic.ts.net/mcp",
+      "url": "http://localhost:8243/mcp",
       "transport": "streamable-http",
-      "description": "Remote code NUC workstation agent control (19 tools, HITL)"
+      "description": "Remote code NUC workstation agent control (24 tools, kanban + milestones)"
     },
     {
       "name": "tkn-ssh",
