@@ -144,12 +144,6 @@
       "description": "Ollama model management - list, pull, push, chat, embeddings (13 tools)"
     },
     {
-      "name": "tkn-openclaw",
-      "url": "https://mcp-openclaw.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "OpenClaw autonomous AI agent interaction"
-    },
-    {
       "name": "tkn-plane",
       "url": "https://mcp-plane.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -166,6 +160,12 @@
       "url": "https://mcp-remote-code-auto.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Remote code auto AI coding agent control (19 tools, HITL)"
+    },
+    {
+      "name": "tkn-remote-code-nuc",
+      "url": "https://mcp-remote-code-nuc.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Remote code NUC workstation agent control (19 tools, HITL)"
     },
     {
       "name": "tkn-ssh",
