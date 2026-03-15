@@ -168,6 +168,12 @@
       "description": "Remote code auto AI coding agent control (19 tools, HITL)"
     },
     {
+      "name": "tkn-remote-code-nuc",
+      "url": "https://mcp-remote-code-nuc.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "NUC workstation remote-code AI coding agent control (HITL)"
+    },
+    {
       "name": "tkn-ssh",
       "url": "https://mcp-ssh.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
