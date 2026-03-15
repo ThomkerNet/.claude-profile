@@ -204,6 +204,12 @@
       "description": "Semantic tool discovery - search across all MCP server tools by natural language (5 tools)"
     },
     {
+      "name": "tkn-image",
+      "url": "https://mcp-image.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Local AI image generation via ComfyUI on nuc-ai RTX 2080 Ti (12 tools)"
+    },
+    {
       "name": "tkn-unifi",
       "url": "https://mcp-tkn-unifi.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
