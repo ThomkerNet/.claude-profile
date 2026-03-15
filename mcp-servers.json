@@ -84,6 +84,12 @@
       "description": "GitHub Actions CI/CD management"
     },
     {
+      "name": "tkn-gws-admin",
+      "url": "https://mcp-gws-admin.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Google Workspace Admin SDK - groups, users, domains, audit (30 tools)"
+    },
+    {
       "name": "tkn-google-workspace",
       "url": "https://mcp-google-workspace.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -178,6 +184,18 @@
       "url": "https://mcp-telegram.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Telegram messaging via Telethon MTProto - user account (20 tools)"
+    },
+    {
+      "name": "tkn-todoist",
+      "url": "https://mcp-todoist.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Todoist task management"
+    },
+    {
+      "name": "tkn-toolhelper",
+      "url": "https://mcp-toolhelper.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Semantic tool discovery - search across all MCP server tools by natural language (5 tools)"
     },
     {
       "name": "tkn-unifi",
