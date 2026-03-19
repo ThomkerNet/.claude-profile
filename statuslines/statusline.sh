@@ -462,4 +462,4 @@ done
 [ -n "$stale_prefix" ] && [ -n "$line2" ] && line2="${stale_prefix}${line2}"
 
 echo "$line1"
-[ -n "$line2" ] && echo "$line2"
+echo "$line2"
