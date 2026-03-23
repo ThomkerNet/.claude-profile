@@ -72,6 +72,12 @@
       "description": "Dify AI Platform management"
     },
     {
+      "name": "tkn-fabric",
+      "url": "https://mcp-fabric.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Fabric pattern library — prompt enhancement and expert framing via TF-IDF + LLM reranking"
+    },
+    {
       "name": "tkn-firecrawl",
       "url": "https://mcp-firecrawl.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -82,12 +88,6 @@
       "url": "https://mcp-github-actions.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "GitHub Actions CI/CD management"
-    },
-    {
-      "name": "tkn-gws-admin",
-      "url": "https://mcp-gws-admin.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "Google Workspace Admin SDK - groups, users, domains, audit (30 tools)"
     },
     {
       "name": "tkn-google-workspace",
@@ -106,6 +106,12 @@
       "url": "https://mcp-hitl.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Human-in-the-loop approval via Telegram"
+    },
+    {
+      "name": "tkn-hk-bridge",
+      "url": "https://mcp-hk-bridge.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "HomeKit Bridge entity management — SSH read + HA WebSocket write (12 tools)"
     },
     {
       "name": "tkn-homarr",
@@ -156,6 +162,12 @@
       "description": "Plane project management (27 tools)"
     },
     {
+      "name": "tkn-plaud",
+      "url": "https://mcp-plaud.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Plaud Note recording access — list recordings, transcripts, audio, search"
+    },
+    {
       "name": "tkn-realdebrid",
       "url": "https://mcp-realdebrid.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -166,18 +178,6 @@
       "url": "https://mcp-remote-code-auto.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Remote code auto AI coding agent control (19 tools, HITL)"
-    },
-    {
-      "name": "tkn-remote-code-nuc",
-      "url": "https://mcp-remote-code-nuc.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "NUC workstation remote-code AI coding agent control (HITL)"
-    },
-    {
-      "name": "tkn-qmd",
-      "url": "https://mcp-qmd.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "QMD semantic memory - hybrid search (BM25 + vector + LLM reranking) over workspace, Obsidian vault, and knowledge files"
     },
     {
       "name": "tkn-ssh",
