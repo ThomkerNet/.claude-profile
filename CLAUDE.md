@@ -288,6 +288,50 @@ peer_consult(question: "Why might this race condition occur?", context: "...", c
 
 ---
 
+## Fabric Pattern Library (MCP Server: `tkn-fabric`)
+
+Expert prompt enhancement and AI task dispatch via the [Fabric](https://github.com/danielmiessler/fabric) pattern library (251 patterns). Use this to frame work through the right expert lens before executing, or to dispatch a fully-structured task to SwarmOps.
+
+**When to use:**
+- User asks to "use fabric", "enhance this prompt", or "find a pattern for X"
+- Before starting a complex task — find the best expert framing first
+- User wants to dispatch a task to SwarmOps with a fabric-enhanced brief
+- Improving a vague or underspecified instruction into a structured prompt
+
+### Quick Reference
+
+| Tool | Use When |
+|------|----------|
+| `select_pattern` | Find the best pattern for an intent (TF-IDF + LLM reranking) |
+| `get_pattern` | Read full system prompt for a named pattern |
+| `enhance_prompt` | Rewrite a prompt using the best matching pattern |
+| `list_patterns` | Browse all 251 available patterns |
+| `create_dispatch_pack` | Build a structured task brief (pattern + context + goals) for SwarmOps |
+| `create_swarmops_task` | Send a dispatch pack directly to SwarmOps for agent execution |
+| `update_patterns` | Refresh the pattern index from the upstream fabric repo |
+
+### Workflow
+
+```
+# Find and apply the best pattern
+select_pattern(intent: "analyse security of this API")
+→ returns ranked patterns with scores
+
+# Enhance a prompt directly
+enhance_prompt(prompt: "review my auth code", top_k: 3)
+→ returns rewritten prompt using best pattern
+
+# Dispatch to SwarmOps
+create_dispatch_pack(intent: "refactor this module", context: "...", goals: ["..."])
+→ create_swarmops_task(dispatch_pack: <result>)
+```
+
+### Pattern Selection
+
+`select_pattern` uses TF-IDF for fast candidate retrieval then LiteLLM reranking for accuracy. Pass `top_k` (default 5) to control how many candidates are returned. The best match is `results[0]`.
+
+---
+
 ## Notes
 
 - **Scratchpad for temp files:** Use session-specific scratchpad directory (not `/tmp`)

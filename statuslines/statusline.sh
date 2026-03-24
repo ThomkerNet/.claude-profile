@@ -186,6 +186,10 @@ _json=$(cat)
 # Debug mode: CLAUDE_STATUSLINE_DEBUG=1 captures raw JSON for inspection
 [ "${CLAUDE_STATUSLINE_DEBUG:-0}" = "1" ] && echo "$_json" > "${HOME}/.claude/.statusline-debug.json"
 
+# Write compact JSON for SwarmOps TUI (read on slow tick via ~/.claude/.swarmops-statusline.json)
+_cc_tmp="${HOME}/.claude/.swarmops-statusline.json.tmp"
+echo "$_json" | jq -c '{model:(.model.display_name//"Claude"),ctx_pct:((.context_window.used_percentage//0)|floor),tokens:((.context_window.total_input_tokens//0)+(.context_window.total_output_tokens//0)),cost:(.cost.total_cost_usd//0),lines_added:(.cost.total_lines_added//0),lines_removed:(.cost.total_lines_removed//0)}' > "$_cc_tmp" 2>/dev/null && mv -f "$_cc_tmp" "${HOME}/.claude/.swarmops-statusline.json" 2>/dev/null
+
 IFS=$'\t' read -r model fullPath contextPct currentTokens costUsd linesAdded linesRemoved < <(
     echo "$_json" | jq -r '[
         (.model.display_name // "Claude"),

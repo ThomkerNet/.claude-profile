@@ -12,7 +12,7 @@ Show a readable overview of issues in a Plane project, grouped by state.
 ## Arguments
 
 `$ARGUMENTS` — Optional. Can be:
-- A project identifier: `MCP`, `TKN`, `CP`, `UNR`, `HA`, `HOST`, `SETUP`, `INBOX`
+- A project identifier: `MCP`, `TKN`, `CP`, `UNR`, `HA`, `HOST`, `SETUP`, `INBOX`, `SWM`
 - The word `all` to include Done/Cancelled issues
 - Both, in any order: e.g. `TKN all` or `all MCP`
 
@@ -30,11 +30,13 @@ If no project is specified, auto-select from current working directory.
 | HOST | TKNet Hosting | `82b58c20-dbd4-4607-991a-36e979066404` |
 | SETUP | TKNet Ubuntu Claude Setup Script | `9ffdc926-5c41-4964-b381-5cf72a7fb9a5` |
 | INBOX | Inbox | `0dd1bf14-2969-4c14-8e70-e4c4531cf137` |
+| SWM | RC Swarm | `d0f05492-f25d-4627-ad12-c6be3679e057` |
 
 **Auto-select by directory:**
 - `TKNet-MCPServer/` → MCP
 - `TKNet-Docker-Stacks/` → TKN
 - `TKNet-Claude-Profile/` → CP
+- `remote-code/` → SWM
 - Other → TKN
 
 ## Workflow
