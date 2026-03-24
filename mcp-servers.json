@@ -73,7 +73,7 @@
     },
     {
       "name": "tkn-fabric",
-      "url": "https://mcp-fabric.gate-hexatonic.ts.net/mcp",
+      "url": "https://mcp-tkn-fabric.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Fabric pattern library — prompt enhancement and expert framing via TF-IDF + LLM reranking"
     },
