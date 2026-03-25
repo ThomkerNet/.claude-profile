@@ -10,73 +10,99 @@ description: Context switch — find and activate the most appropriate session c
 ## Usage
 
 ```
-/csw describe what you want to work on
-/csw swarmops dispatch routing
-/csw bnx auth flow refactor
-/csw                          # auto-detect from cwd + git remote
+/csw swarmops dispatch routing      # search by description
+/csw bnx auth flow refactor         # search by description
+/csw @swarmops                      # activate by exact name (use @ prefix)
+/csw                                # auto-detect from cwd + git remote
 ```
 
 ## What It Does
 
-Finds and activates the most relevant session context from the `tkn-context` MCP server, then injects it into the current session so you have the right reference material and startup instructions ready.
+Finds and activates the most relevant session context from the `tkn-context` MCP server, injecting reference material and startup instructions for the work you're about to do.
 
 ## Execution Steps
 
-### Step 1: Gather signals
+### Step 0: Exact name fast-path
 
-Collect location signals to feed into resolution:
+If `$ARGUMENTS` starts with `@`, strip the `@` and call `context_get(name_or_id)`:
+- If found → jump directly to **Step 4: Activate**
+- If not found → report error: "No context named `<name>` found" and call `context_list(limit=50)` to show all available, then stop
 
+### Step 1: Gather signals (run all in parallel)
+
+**1a — Location:**
 ```bash
-# Current working directory
 pwd
-
-# Git remote (if in a repo)
 git remote get-url origin 2>/dev/null || echo ""
 ```
+Treat failed/missing git remote as empty string.
 
-### Step 2: Try auto-resolution first
+**1b — Auto-resolve:** Call `context_resolve(cwd=<pwd result>, git_remote=<remote or omit if empty>)`
 
-Call `context_resolve` with the cwd and git remote from Step 1. This uses registered `path_prefix` and `git_remote` mappings for an exact match.
+**1c — Search:** If `$ARGUMENTS` is non-empty, call `context_list(query="$ARGUMENTS", limit=5)`. Skip if `$ARGUMENTS` is empty.
 
-### Step 3: Search by description
+### Step 2: Build candidate set
 
-If `$ARGUMENTS` is non-empty, call `context_list` with `query: "$ARGUMENTS"` to find contexts matching the description. Limit to 5 results.
+Candidates are the union of:
+- Auto-resolve result (if any)
+- Results from `context_list` (if any)
 
-### Step 4: Pick the best match
+Compare by `id` when available, otherwise normalized name (lowercase, trimmed).
 
-Scoring priority (highest wins):
-1. **Auto-resolve hit AND description match** — same context appears in both → definite winner
-2. **Auto-resolve hit only** — cwd/git-remote mapped context, even if description vague
-3. **Description match** — best text match from `context_list` results
-4. **No match** — report "no context found" and list all available contexts via `context_list`
+### Step 3: Select winner
 
-If multiple candidates remain tied, prefer the one whose `name` or `description` most closely matches `$ARGUMENTS`.
+Apply this priority order — first rule that yields a clear winner wins:
 
-### Step 5: Activate
+1. **Agree** — auto-resolve context AND appears in `context_list` results → definite winner
+2. **Intent** — `$ARGUMENTS` is non-empty → top result from `context_list` wins (explicit user intent outweighs location)
+3. **Location** — `$ARGUMENTS` is empty → auto-resolve result wins (no description, trust cwd/remote)
+4. **Fallback** — no `$ARGUMENTS` and auto-resolve failed → derive a query from the cwd basename or remote repo name (e.g. `path/to/swarmops` → query `swarmops`), call `context_list(query=<derived>, limit=5)`, pick top result
+5. **Nothing found** → go to **No Context Found**
 
-Call `context_activate` with the winning context's name or ID. Output the full result — this IS the context injection.
+**Tie-breaking** (same priority tier, multiple candidates): exact normalized name match in `$ARGUMENTS` → earlier in `context_list` order → lexical sort by name.
 
-### Step 6: Report
+### Step 4: Activate
 
-After activating, briefly note:
-- Which context was loaded and why (auto-resolved / description match / both)
-- Any close runner-up alternatives (if score was close), so the user can switch with `/csw <name>`
+Call `context_activate(name_or_id=<winner id or name>)`.
 
-## Quick switch by name
+**Output the complete response verbatim** — do not summarize or truncate it. This is the context injection.
 
-If `$ARGUMENTS` is a single word that exactly matches a context name, skip Steps 1-4 and jump straight to `context_activate`.
+If `context_activate` fails (tool error, context deleted, server unavailable):
+- Report the error clearly
+- Fall back to `context_list(limit=50)` and show available contexts as a table
+- Stop
 
-## No context found
+### Step 5: Report
 
-If nothing matches, call `context_list` with no filter and display all available contexts as a table:
+Before the activation output, print a single line:
+```
+Activated: **<context name>** (<reason: auto-resolved / description match / both / fallback>)
+```
+If there is a runner-up candidate in the same priority tier, add:
+```
+Alternative: `/csw @<runner-up name>` — <runner-up description>
+```
+
+### Step 6: Startup instructions
+
+If the activated context includes a **Startup Instructions** / **Startup Actions** section:
+- Display the instructions
+- **Do not execute shell commands automatically**
+- Ask: "Run startup instructions? (y/n)" before executing anything that changes state
+
+Purely informational instructions (read-only `git status`, `pwd`, etc.) may run without confirmation.
+
+## No Context Found
+
+Call `context_list(limit=50)` and display results as:
 
 | Name | Description | Tags |
 |------|-------------|------|
 
-Then ask: "Which would you like to load?"
+Then say: "No matching context found. Which would you like to load? Reply with `/csw @<name>`."
 
 ## Notes
 
-- Run Steps 1-3 in parallel where possible
-- `context_activate` output is the context itself — display it in full, don't summarize it
-- If the activated context has **Startup Instructions**, execute them immediately after displaying
+- Steps 1a, 1b, 1c all run in parallel
+- `context_activate` output is the context — output it in full, verbatim
+- If MCP tools are unavailable, report the error and exit cleanly; do not attempt to guess at context
