@@ -66,6 +66,12 @@
       "description": "Cloudflare DNS, Zero Trust, Tunnels, DLP (116 tools, Tailscale HTTPS)"
     },
     {
+      "name": "tkn-context",
+      "url": "https://mcp-tkn-context.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Session context management — project and work contexts for Claude Code CLI sessions (13 tools)"
+    },
+    {
       "name": "tkn-dify",
       "url": "https://mcp-dify.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -73,9 +79,15 @@
     },
     {
       "name": "tkn-fabric",
-      "url": "https://mcp-tkn-fabric.gate-hexatonic.ts.net/mcp",
+      "url": "https://mcp-fabric.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Fabric pattern library — prompt enhancement and expert framing via TF-IDF + LLM reranking"
+    },
+    {
+      "name": "tkn-file-staging",
+      "url": "https://mcp-file-staging.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "File staging for cross-MCP URL transfer — stage files and retrieve single-use HTTPS URLs"
     },
     {
       "name": "tkn-firecrawl",
@@ -132,6 +144,12 @@
       "description": "Icinga2 monitoring management"
     },
     {
+      "name": "tkn-image",
+      "url": "https://mcp-image.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Local AI image generation via ComfyUI on nuc-ai RTX 2080 Ti (12 tools)"
+    },
+    {
       "name": "tkn-komodo",
       "url": "https://mcp-komodo.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -180,6 +198,12 @@
       "description": "Remote code auto AI coding agent control (19 tools, HITL)"
     },
     {
+      "name": "tkn-serpapi",
+      "url": "https://mcp-serpapi.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "SerpAPI search — Google, Bing, YouTube, Scholar, Shopping"
+    },
+    {
       "name": "tkn-ssh",
       "url": "https://mcp-ssh.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -208,12 +232,6 @@
       "url": "https://mcp-toolhelper.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Semantic tool discovery - search across all MCP server tools by natural language (5 tools)"
-    },
-    {
-      "name": "tkn-image",
-      "url": "https://mcp-image.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "Local AI image generation via ComfyUI on nuc-ai RTX 2080 Ti (12 tools)"
     },
     {
       "name": "tkn-unifi",
