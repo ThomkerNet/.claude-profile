@@ -30,6 +30,12 @@
       "description": "Step-by-step problem solving"
     },
     {
+      "name": "bnx-freeagent",
+      "url": "https://mcp-bnx-freeagent.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "FreeAgent accounting API — invoices, bills, contacts, expenses, bank accounts for BoroughNexus (22 tools, OAuth2)"
+    },
+    {
       "name": "tkn-action1",
       "url": "https://mcp-action1.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -148,6 +154,12 @@
       "url": "https://mcp-image.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Local AI image generation via ComfyUI on nuc-ai RTX 2080 Ti (12 tools)"
+    },
+    {
+      "name": "tkn-image-evo2",
+      "url": "https://mcp-image-evo2.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "AI image/video generation on evo2 AMD Strix Halo — FLUX.2, Wan 2.2, HunyuanVideo 1.5, LTX-2 (ROCm, 92GB VRAM)"
     },
     {
       "name": "tkn-komodo",
