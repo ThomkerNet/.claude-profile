@@ -59,26 +59,17 @@ If `$ARGUMENTS` is non-empty (and doesn't start with `=`):
   ```
   Call `context_resolve(cwd=<pwd>, git_remote=<remote or omit if empty>)`.
 
-**2b** — Launch a **haiku** Agent to rank contexts by relevance:
+**2b** — Call `mcp__tkn-aipeer__quick_consult` to rank contexts by relevance:
 
 ```
-Agent(model: "haiku", prompt: <see below>)
+quick_consult(
+  question: "Rank these session contexts by relevance to the task: \"$ARGUMENTS\". Return ONLY a JSON array of context names, most relevant first. Only include plausible matches. If nothing matches, return [].",
+  context: "<for each context from 2a: one line per context: 'name — description'>",
+  consultation_type: "general"
+)
 ```
 
-**Agent prompt:**
-
-> You are ranking session contexts by relevance to a user's task description.
->
-> **User's task:** `$ARGUMENTS`
->
-> **Available contexts (name — description):**
-> <for each context from 2a: `name — description`>
->
-> Return a JSON array of context names ordered from MOST to LEAST relevant. Only include contexts that are at least somewhat plausible. If nothing matches, return an empty array.
->
-> Respond with ONLY the JSON array, no explanation. Example: ["tkn-homelab-infra", "tknet-mcpserver", "arr-media-stack"]
-
-**2c** — Parse the agent's response into a ranked list.
+**2c** — Extract the JSON array from the response content. Parse into a ranked list.
 
 ### Step 3: Present ranked options for user choice
 
@@ -151,6 +142,6 @@ Then say: "No matching context found. Which would you like to load? Reply with `
 ## Notes
 
 - `context_pick` requires MCP Elicitation support — if the client doesn't support it, the fallback shows a table
-- The haiku agent for ranking is intentionally lightweight — it only sees names and descriptions, not full context content
+- Ranking uses `quick_consult` (external LLM via tkn-aipeer) to avoid system context bloat that prevents Haiku agents from working
 - `context_activate` output is the context — output it in full, verbatim
 - If MCP tools are unavailable, report the error and exit cleanly; do not attempt to guess at context
