@@ -1,6 +1,7 @@
 ---
 name: csw
 description: Context switch — find and activate the most appropriate session context for a given task description
+argument-hint: "[task description or =context-name] e.g. =arr-media-stack, =tkn-homelab-infra, =tknet-mcpserver, =briefbox, =bnx-admin"
 ---
 
 # Context Switch (`/csw`)
@@ -12,7 +13,7 @@ description: Context switch — find and activate the most appropriate session c
 ```
 /csw swarmops dispatch routing      # search by description
 /csw bnx auth flow refactor         # search by description
-/csw @swarmops                      # activate by exact name (use @ prefix)
+/csw =swarmops                      # activate by exact name (use = prefix)
 /csw                                # auto-detect from cwd + git remote
 ```
 
@@ -24,9 +25,11 @@ Finds and activates the most relevant session context from the `tkn-context` MCP
 
 ### Step 0: Exact name fast-path
 
-If `$ARGUMENTS` starts with `@`, strip the `@` and call `context_get(name_or_id)`:
+If `$ARGUMENTS` starts with `=`, strip the `=` and call `context_get(name_or_id)`:
 - If found → jump directly to **Step 4: Activate**
 - If not found → report error: "No context named `<name>` found" and call `context_list(limit=50)` to show all available, then stop
+
+> **Note:** `@` is reserved by Claude Code for file/directory references. Use `=` for exact name lookups.
 
 ### Step 1: Gather signals (run all in parallel)
 
@@ -80,7 +83,7 @@ Activated: **<context name>** (<reason: auto-resolved / description match / both
 ```
 If there is a runner-up candidate in the same priority tier, add:
 ```
-Alternative: `/csw @<runner-up name>` — <runner-up description>
+Alternative: `/csw =<runner-up name>` — <runner-up description>
 ```
 
 ### Step 6: Startup instructions
@@ -99,7 +102,7 @@ Call `context_list(limit=50)` and display results as:
 | Name | Description | Tags |
 |------|-------------|------|
 
-Then say: "No matching context found. Which would you like to load? Reply with `/csw @<name>`."
+Then say: "No matching context found. Which would you like to load? Reply with `/csw =<name>`."
 
 ## Notes
 
