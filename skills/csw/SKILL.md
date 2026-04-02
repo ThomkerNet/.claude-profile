@@ -46,11 +46,18 @@ If `context_pick` fails (elicitation not supported, server error):
 
 After successful activation, go to **Step 5: Report** (reason: "interactive picker").
 
-### Step 2: With arguments — AI-ranked search
+### Step 2: With arguments — AI-ranked search + user choice
 
 If `$ARGUMENTS` is non-empty (and doesn't start with `=`):
 
-**2a** — Call `context_list(limit=50)` to fetch ALL available contexts (names + descriptions).
+**2a** — In parallel:
+- Call `context_list(limit=50)` to fetch ALL available contexts (names + descriptions).
+- Get location signals:
+  ```bash
+  pwd
+  git remote get-url origin 2>/dev/null || echo ""
+  ```
+  Call `context_resolve(cwd=<pwd>, git_remote=<remote or omit if empty>)`.
 
 **2b** — Launch a **haiku** Agent to rank contexts by relevance:
 
@@ -71,24 +78,39 @@ Agent(model: "haiku", prompt: <see below>)
 >
 > Respond with ONLY the JSON array, no explanation. Example: ["tkn-homelab-infra", "tknet-mcpserver", "arr-media-stack"]
 
-**2c** — Parse the agent's response. Take the top-ranked context name.
+**2c** — Parse the agent's response into a ranked list.
 
-- If the array is empty → go to **No Context Found**
-- If the array has entries → the first entry is the winner; the second (if any) is the runner-up
+### Step 3: Present ranked options for user choice
 
-### Step 3: Also check location (parallel with 2a)
+Display the AI-ranked contexts as a numbered list. Mark the auto-resolved context if it appears. Always include a "create new" option at the end.
 
-Run in parallel with Step 2a:
+```
+Best matches for "claude profile skills config":
 
-```bash
-pwd
-git remote get-url origin 2>/dev/null || echo ""
+  1. claude-profile — Claude Code profile configuration, skills, commands, hooks...
+  2. tknet-mcpserver — MCP server development and deployment... ← auto-resolved from cwd
+  3. tkn-homelab-infra — TKN homelab infrastructure...
+
+  N. Create new context for this task
+
+Pick a number (or Enter for 1):
 ```
 
-Call `context_resolve(cwd=<pwd>, git_remote=<remote or omit if empty>)`.
+If the AI returned an empty array, show:
+```
+No strong matches for "claude profile skills config". Available contexts:
 
-If the auto-resolved context matches the AI-ranked winner → extra confidence (report as "both").
-If they disagree → trust the AI ranking (user's explicit intent outweighs location).
+  1. <all contexts listed alphabetically>
+  ...
+  N. Create new context for this task
+
+Pick a number:
+```
+
+Wait for user input via AskUserQuestion.
+
+- If user picks a number → activate that context (Step 4)
+- If user picks "create new" → ask for a context name, then call `context_create(name=<name>)` and report. Do NOT activate — the new context is empty. Say: "Context created. Populate it with content, then `/csw =<name>` to activate."
 
 ### Step 4: Activate
 
@@ -105,11 +127,7 @@ If `context_activate` fails (tool error, context deleted, server unavailable):
 
 Before the activation output, print a single line:
 ```
-Activated: **<context name>** (<reason: interactive picker / AI-ranked match / both / exact name>)
-```
-If there is a runner-up from the AI ranking, add:
-```
-Alternative: `/csw =<runner-up name>` — <runner-up description>
+Activated: **<context name>** (<reason: interactive picker / AI-ranked match / exact name>)
 ```
 
 ### Step 6: Startup instructions
