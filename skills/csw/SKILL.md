@@ -11,10 +11,10 @@ argument-hint: "[task description or =context-name] e.g. =arr-media-stack, =tkn-
 ## Usage
 
 ```
-/csw swarmops dispatch routing      # search by description
-/csw bnx auth flow refactor         # search by description
+/csw swarmops dispatch routing      # AI-ranked match by description
+/csw bnx auth flow refactor         # AI-ranked match by description
 /csw =swarmops                      # activate by exact name (use = prefix)
-/csw                                # auto-detect from cwd + git remote
+/csw                                # interactive picker (MCP Elicitation dropdown)
 ```
 
 ## What It Does
@@ -31,42 +31,68 @@ If `$ARGUMENTS` starts with `=`, strip the `=` and call `context_get(name_or_id)
 
 > **Note:** `@` is reserved by Claude Code for file/directory references. Use `=` for exact name lookups.
 
-### Step 1: Gather signals (run all in parallel)
+### Step 1: No arguments — interactive picker
 
-**1a — Location:**
+If `$ARGUMENTS` is empty, call `context_pick()` (MCP Elicitation tool).
+
+This presents a dropdown of all available contexts for the user to select from. The selected context is activated automatically by the tool.
+
+**Output the complete `context_pick` response verbatim** — it includes the activated context content.
+
+If `context_pick` fails (elicitation not supported, server error):
+- Fall back to `context_list(limit=50)` and show available contexts as a table
+- Say: "Interactive picker unavailable. Reply with `/csw =<name>` to load a context."
+- Stop
+
+After successful activation, go to **Step 5: Report** (reason: "interactive picker").
+
+### Step 2: With arguments — AI-ranked search
+
+If `$ARGUMENTS` is non-empty (and doesn't start with `=`):
+
+**2a** — Call `context_list(limit=50)` to fetch ALL available contexts (names + descriptions).
+
+**2b** — Launch a **haiku** Agent to rank contexts by relevance:
+
+```
+Agent(model: "haiku", prompt: <see below>)
+```
+
+**Agent prompt:**
+
+> You are ranking session contexts by relevance to a user's task description.
+>
+> **User's task:** `$ARGUMENTS`
+>
+> **Available contexts (name — description):**
+> <for each context from 2a: `name — description`>
+>
+> Return a JSON array of context names ordered from MOST to LEAST relevant. Only include contexts that are at least somewhat plausible. If nothing matches, return an empty array.
+>
+> Respond with ONLY the JSON array, no explanation. Example: ["tkn-homelab-infra", "tknet-mcpserver", "arr-media-stack"]
+
+**2c** — Parse the agent's response. Take the top-ranked context name.
+
+- If the array is empty → go to **No Context Found**
+- If the array has entries → the first entry is the winner; the second (if any) is the runner-up
+
+### Step 3: Also check location (parallel with 2a)
+
+Run in parallel with Step 2a:
+
 ```bash
 pwd
 git remote get-url origin 2>/dev/null || echo ""
 ```
-Treat failed/missing git remote as empty string.
 
-**1b — Auto-resolve:** Call `context_resolve(cwd=<pwd result>, git_remote=<remote or omit if empty>)`
+Call `context_resolve(cwd=<pwd>, git_remote=<remote or omit if empty>)`.
 
-**1c — Search:** If `$ARGUMENTS` is non-empty, call `context_list(query="$ARGUMENTS", limit=5)`. Skip if `$ARGUMENTS` is empty.
-
-### Step 2: Build candidate set
-
-Candidates are the union of:
-- Auto-resolve result (if any)
-- Results from `context_list` (if any)
-
-Compare by `id` when available, otherwise normalized name (lowercase, trimmed).
-
-### Step 3: Select winner
-
-Apply this priority order — first rule that yields a clear winner wins:
-
-1. **Agree** — auto-resolve context AND appears in `context_list` results → definite winner
-2. **Intent** — `$ARGUMENTS` is non-empty → top result from `context_list` wins (explicit user intent outweighs location)
-3. **Location** — `$ARGUMENTS` is empty → auto-resolve result wins (no description, trust cwd/remote)
-4. **Fallback** — no `$ARGUMENTS` and auto-resolve failed → derive a query from the cwd basename or remote repo name (e.g. `path/to/swarmops` → query `swarmops`), call `context_list(query=<derived>, limit=5)`, pick top result
-5. **Nothing found** → go to **No Context Found**
-
-**Tie-breaking** (same priority tier, multiple candidates): exact normalized name match in `$ARGUMENTS` → earlier in `context_list` order → lexical sort by name.
+If the auto-resolved context matches the AI-ranked winner → extra confidence (report as "both").
+If they disagree → trust the AI ranking (user's explicit intent outweighs location).
 
 ### Step 4: Activate
 
-Call `context_activate(name_or_id=<winner id or name>)`.
+Call `context_activate(name_or_id=<winner name>)`.
 
 **Output the complete response verbatim** — do not summarize or truncate it. This is the context injection.
 
@@ -79,9 +105,9 @@ If `context_activate` fails (tool error, context deleted, server unavailable):
 
 Before the activation output, print a single line:
 ```
-Activated: **<context name>** (<reason: auto-resolved / description match / both / fallback>)
+Activated: **<context name>** (<reason: interactive picker / AI-ranked match / both / exact name>)
 ```
-If there is a runner-up candidate in the same priority tier, add:
+If there is a runner-up from the AI ranking, add:
 ```
 Alternative: `/csw =<runner-up name>` — <runner-up description>
 ```
@@ -106,6 +132,7 @@ Then say: "No matching context found. Which would you like to load? Reply with `
 
 ## Notes
 
-- Steps 1a, 1b, 1c all run in parallel
+- `context_pick` requires MCP Elicitation support — if the client doesn't support it, the fallback shows a table
+- The haiku agent for ranking is intentionally lightweight — it only sees names and descriptions, not full context content
 - `context_activate` output is the context — output it in full, verbatim
 - If MCP tools are unavailable, report the error and exit cleanly; do not attempt to guess at context
