@@ -84,12 +84,6 @@
       "description": "CTTW browser control — Chrome extension + CDP for navigate, click, type, screenshot (21 tools)"
     },
     {
-      "name": "tkn-plex",
-      "url": "https://mcp-plex.gate-hexatonic.ts.net/mcp",
-      "transport": "streamable-http",
-      "description": "Plex Media Server — library, search, history, playback, playlists, collections (34 tools)"
-    },
-    {
       "name": "tkn-dify",
       "url": "https://mcp-dify.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -216,16 +210,22 @@
       "description": "Plaud Note recording access — list recordings, transcripts, audio, search"
     },
     {
+      "name": "tkn-plex",
+      "url": "https://mcp-plex.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Plex Media Server — library, search, history, playback, playlists, collections (34 tools)"
+    },
+    {
       "name": "tkn-realdebrid",
       "url": "https://mcp-realdebrid.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Real-Debrid account, torrents, and downloads management"
     },
     {
-      "name": "tkn-remote-code-auto",
-      "url": "https://mcp-remote-code-auto.gate-hexatonic.ts.net/mcp",
+      "name": "tkn-swarmops",
+      "url": "https://nuc-ubuntu-dev.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "Remote code auto AI coding agent control (19 tools, HITL)"
+      "description": "SwarmOps native MCP — session management, git ops, warm Claude pool (23 tools)"
     },
     {
       "name": "tkn-serpapi",
