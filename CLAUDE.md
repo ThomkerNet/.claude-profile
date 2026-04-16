@@ -222,9 +222,35 @@ All server URLs are defined in `~/.claude-profile/mcp-servers.json`. Use `/zupda
 
 ---
 
-## AI Peer Review (MCP Server: `tkn-aipeerreview`)
+## Tool Discovery (MCP Server: `tkn-toolhelper`)
 
-Multi-model code review and consultation via external AI models. Use this to get second opinions from non-Claude models (GPT-5.2, Gemini 3 Pro, Codex, etc.).
+Semantic search across all 1200+ tools in the TKN MCP stack. Use this when you need a tool but don't know which server has it, or want to explore what's available for a task.
+
+**When to use:**
+- You're about to do something (send a message, query a service, manage infrastructure) and aren't sure which MCP server/tool handles it
+- User asks "can you X?" where X might be covered by one of the 40+ MCP servers
+- Exploring capabilities before starting a task
+
+**Tools:**
+| Tool | Use When |
+|------|----------|
+| `search_available_tools` | Find tools by description — e.g. "send telegram message", "list docker containers", "search web" |
+| `list_tool_servers` | See all indexed servers with tool counts |
+| `get_tool_details` | Get full parameter schema for a specific tool |
+
+**Example:**
+```
+search_available_tools(query="stage a file for download")
+→ returns tkn-file-staging: stage_file, get_staged_url
+```
+
+**Note:** New servers added to the stack need an explicit first-pass `rebuild_index(servers=[...names...])` before they appear in full rebuilds.
+
+---
+
+## AI Peer Review (MCP Server: `tkn-aipeer`)
+
+Multi-model code review and consultation via external AI models. Use this to get second opinions from non-Claude models (GPT-5.2, GPT-5.3 Codex, Gemini 3.1 Pro, etc.).
 
 **When to use:**
 - User asks to "peer review", "get a second opinion", or "review this code"
@@ -263,9 +289,11 @@ Use `detect_consultation_type` to auto-detect, or specify directly:
 ### Model Selection
 
 Use `get_models_for_review_type` or `get_models_for_consultation_type` to see available models. Key models:
-- **`gpt-5.2`** / **`gpt-5.2-codex`** — Strong for practical code fixes
-- **`gemini-3-pro-preview`** — Good architectural perspective
-- **`claude-opus-4-5`** — When you want a Claude second opinion
+- **`gpt-5.2`** — Latest OpenAI reasoning and coding model
+- **`gpt-5.3-codex`** — Primary code-specialist (debugging, refactoring, test coverage)
+- **`gpt-5.1-codex-max`** — Higher-quality Codex for hard code problems
+- **`gemini-3.1-pro-preview`** — Good architectural perspective (latest Gemini Pro alias)
+- **`claude-opus-4-5-20251101`** — When you want a Claude second opinion
 
 Omit `model` parameter to use the server's default selection.
 
