@@ -60,6 +60,12 @@
       "description": "Sonarr (SD+4K), Radarr (SD+4K), and Prowlarr management"
     },
     {
+      "name": "tkn-arr-release-calendar",
+      "url": "https://mcp-arr-release-calendar.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Arr Release Calendar — aggregated upcoming episodes, movies, and Jellyseerr requests (6 tools)"
+    },
+    {
       "name": "tkn-authentik",
       "url": "https://mcp-authentik.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
@@ -124,6 +130,12 @@
       "url": "https://mcp-google-workspace-bnx.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Google Workspace (simon@boroughnexus.com) - Gmail, Drive, Calendar, Docs"
+    },
+    {
+      "name": "tkn-hermes",
+      "url": "https://hermes-pc.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "Hermes Agent (Hannah) — status, sessions, memory, skills, cron, logs, sandboxes"
     },
     {
       "name": "tkn-hitl",
@@ -222,10 +234,10 @@
       "description": "Real-Debrid account, torrents, and downloads management"
     },
     {
-      "name": "tkn-swarmops",
-      "url": "https://nuc-ubuntu-dev.gate-hexatonic.ts.net/mcp",
+      "name": "tkn-remote-code-auto",
+      "url": "https://mcp-remote-code-auto.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
-      "description": "SwarmOps native MCP — session management, git ops, warm Claude pool (23 tools)"
+      "description": "remote code auto management"
     },
     {
       "name": "tkn-serpapi",
@@ -256,6 +268,12 @@
       "url": "https://mcp-todoist.gate-hexatonic.ts.net/mcp",
       "transport": "streamable-http",
       "description": "Todoist task management"
+    },
+    {
+      "name": "tkn-tool-router",
+      "url": "https://mcp-tool-router.gate-hexatonic.ts.net/mcp",
+      "transport": "streamable-http",
+      "description": "MCP tool router — aggregates 30+ upstream servers with search"
     },
     {
       "name": "tkn-toolhelper",
